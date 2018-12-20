@@ -1107,9 +1107,9 @@ class Solution:
         :rtype: bool
         """
         # create 9 empty set, python2-> set([]), python3-> set()
-        row = [set([]) for i in range(9)]  
-        col = [set([]) for i in range(9)]
-        grid = [set([]) for i in range(9)]
+        row = [set() for _ in range(9)]
+        col = [set() for _ in range(9)]
+        grid = [set() for _ in range(9)]
         
         for i in range(9):
             for j in range(9):
@@ -1390,23 +1390,21 @@ class Solution:
 
 #### 49. Group Anagrams
 ```
+from collections import defaultdict
+
 class Solution:
     def groupAnagrams(self, strs):
         """
         :type strs: List[str]
         :rtype: List[List[str]]
         """
-        
-        from collections import defaultdict
-        
-        ## 用hash存每一个词的pattern
-        hash = defaultdict(list)
-        
+        ## 用mapping存每一个词的pattern
+        mapping = defaultdict(list)
         for each in strs:
-            hash["".join(sorted(each))].append(each)
+            mapping[''.join(sorted(each))].append(each)
         
         res = []
-        for _, val in hash.items():
+        for _, val in mapping.items():
             res.append(sorted(val))
         
         return res
@@ -1945,20 +1943,25 @@ class Solution:
         :rtype: void Do not return anything, modify nums in-place instead.
         0, 1, 2
         """
-        zero = -1
-        two = len(nums)
-        
-        i = 0
-        while i < two:
-            if nums[i] == 1:
-                i += 1
-            elif nums[i] == 2:
-                two -= 1
-                nums[i], nums[two] = nums[two], nums[i]
+        # 三根指针 在大循环中遍历one_pos
+        # zero_pos含义是0的最后一个位置
+        # two_pos含义是2的第一个位置
+        # one_pos含义是1的第一个位置
+        zero_pos = -1
+        one_pos = 0
+        two_pos = len(nums)
+
+        while one_pos < two_pos:
+            if nums[one_pos] == 0:
+                zero_pos += 1
+                nums[zero_pos], nums[one_pos] = nums[one_pos], nums[zero_pos]
+                one_pos += 1
+            elif nums[one_pos] == 1:
+                one_pos += 1
+            # 此时nums[one_pos] == 2
             else:
-                zero += 1
-                nums[i], nums[zero] = nums[zero], nums[i]
-                i += 1
+                two_pos -= 1
+                nums[one_pos], nums[two_pos] = nums[two_pos], nums[one_pos]
 ```
 
 #### 76. Minimum Window Substring, Hard, Facebook, Linkedin
@@ -4853,7 +4856,6 @@ class Solution:
         :type k: int
         :rtype: int
         """
-        
         left = 0
         right = len(nums) - 1
         
@@ -4866,6 +4868,7 @@ class Solution:
             else:
                 left = candidate_pos + 1
     
+    # partition定义为在left和right之间确定在nums中left最终的位置
     def _partition(self, nums, left, right):
         """
         对nums[left...right]前闭后闭部分进行partition操作，
@@ -4886,6 +4889,9 @@ class Solution:
         # 而且nums[final_pivot_pos + 1...i - 1] <= pivot_value
         for i in range(left + 1, right + 1):
             # 此时i相当于整个数组的右半部分（应该小于pivot_value的部分）
+            # 标准升序的quick sort中这里应该是小于号的
+            # 但是这里是求第k大，相当于要降序
+            # 所以用大于号
             if nums[i] > pivot_value:
                 # 此时i位置不满足条件，需要调整时
                 # 此时final_pivot_pos + 1位置的元素肯定是排好的
@@ -5523,30 +5529,29 @@ class Solution:
         :type intervals: List[Interval]
         :rtype: int
         """
-                
         if not intervals:
             return 0
         
         ## 这道题核心需要一个有顺序的hash表(按照时间点从小到大排序)
         ## 里面需要存每个时间点上的room count
-        temp = defaultdict(int)
-        for each in intervals:
-            temp[each.start] += 1
-            temp[each.end] -= 1
+        rooms_at_time = defaultdict(int)
+        for interval in intervals:
+            rooms_at_time[interval.start] += 1
+            rooms_at_time[interval.end] -= 1
         
-        hash = []
-        for timePoint, count in temp.items():
-            hash.append((timePoint, count))
-        hash.sort()
+        rooms_list = []
+        for time_point, counts in rooms_at_time.items():
+            rooms_list.append((time_point, counts))
+        rooms_list.sort()
         
         ## localRes的含义是在遍历时候记录当前需要的room数目
         ## 然后每次都去更新全局最大的globalRes
-        globalRes = localRes = 0
-        for _, count in hash:
-            localRes += count
-            globalRes = max(globalRes, localRes)
+        global_res = local_res = 0
+        for _, counts in rooms_list:
+            local_res += counts
+            global_res = max(global_res, local_res)
         
-        return globalRes
+        return global_res
 ```
 
 #### 254. Factor Combinations
@@ -6851,26 +6856,28 @@ class Solution:
         :type nums: List[int]
         :type k: int
         :rtype: int
+        注意这道题求的是subarray
         """
-        
         total = 0
-        res = 0
+        max_len = 0
         # mapping里放的是sum和对应的坐标
         mapping = {}
         
         for i, num in enumerate(nums):
             total += num
             if total == k:
-                res = i + 1
-            # 注意：这里一定是total-k
+                # max_len代表的是长度，所以要加1
+                max_len = i + 1
+            # 注意：这里一定是total - k
             # 因为相当于presum 当前的total要减去以前的total（total - k）
             # total - （total - k） == k！！！
             elif total - k in mapping:
-                res = max(res, i - mapping[total - k])
+                max_len = max(max_len, i - mapping[total - k])
+
             if total not in mapping:
                 mapping[total] = i
         
-        return res
+        return max_len
 ```
 
 #### 329. Longest Increasing Path in a Matrix, Hard, Facebook
@@ -7849,6 +7856,9 @@ class Solution:
                 repeat = 0
                 base = 1
                 while stack and '0' <= stack[-1] <= '9':
+                    # 注意这里需要使用base的
+                    # 因为stack是从后往前pop
+                    # 所以当前pop出来的0-9数字需要乘以base
                     repeat += int(stack.pop()) * base
                     base *= 10
                 
@@ -9006,7 +9016,6 @@ class Solution:
         :type nums: List[int]
         :rtype: List[List[int]]
         """
-        
         res = set()
         self._dfs(nums, 0, [], res)
         return list(res)
@@ -9014,7 +9023,9 @@ class Solution:
     def _dfs(self, nums, start, curr, res):
         if len(curr) >= 2:
             res.add(tuple(curr))
-        
+            # 此时不能return
+            # 这道题是继续去往下找
+
         for i in range(start, len(nums)):
             if curr and curr[-1] > nums[i]:
                 continue
@@ -9070,8 +9081,9 @@ class Solution:
         if start == len(nums):
             return 1 if total == 0 else 0
         
-        if dp[start].get(total):
-            return dp[start].get(total)
+        if total in dp[start]:
+            return dp[start][total]
+
         cnt1 = self._dfs(nums, total - nums[start], start + 1, dp)
         cnt2 = self._dfs(nums, total + nums[start], start + 1, dp)
         dp[start][total] = cnt1 + cnt2
@@ -9210,6 +9222,7 @@ class Solution:
     def __init__(self, w):
         """
         :type w: List[int]
+        带weighting的随机数
         """
         # 这里不是严格的presum数组
         self._pre_sum = [0] * len(w)
@@ -9221,6 +9234,9 @@ class Solution:
         """
         :rtype: int
         """
+        # 从0到总和total sum之间取一个数字
+        # 相当于看这个数字落在哪个范围内
+        # 则pre_sum数组中**第一个**大于这个随机数字的就是解
         rand_num = randint(0, self._pre_sum[-1] - 1)
         start, end = 0, len(self._pre_sum) - 1
         # 二分去找presum数组里第一个严格大于随机数rand_num的坐标
@@ -9415,21 +9431,26 @@ from collections import defaultdict
 
 
 class Solution:
-    def subarraySum(self, nums, k):
+    def subarraySum(self, nums, target):
         """
         :type nums: List[int]
-        :type k: int
+        :type target: int
         :rtype: int
         """
-        
         res = 0
         total = 0
+        # 某个sum值（这个值是从最右边0开始算的）
+        # 基本思路就是如果这个值出现过两次
+        # 则中间的坐标之间的和就是0
+        # 推广一下
+        # 如果total出现过，而且total-target也出现过
+        # 则中间的差就是target！！！
         mapping = defaultdict(int)
         
         for num in nums:
             mapping[total] += 1
             total += num
-            res += mapping[total - k]
+            res += mapping[total - target]
     
         return res
 ```
@@ -9578,20 +9599,24 @@ class Solution:
         :type tasks: List[str]
         :type n: int
         :rtype: int
+        每个相同的task需要相隔n个间隔
         """
-        
         cnt = [0] * 26
         for task in tasks:
             cnt[ord(task) - ord('A')] += 1
         
         cnt.sort()
-        i = 25
         mx = cnt[25]
         length = len(tasks)
-        while i >= 0 and cnt[i] == mx:
-            i -= 1
-
-        return max(length, (mx - 1) * (n + 1) + 25 - i)
+        # first_less_mx_inx是sort过后的cnt数组中从左往右最后一个值小于mx的
+        first_less_mx_inx = cnt.index(mx) - 1
+        
+        # n + 1就是每个子集的长度
+        # mx是出现的最多次数
+        # 因为第一项是不考虑最后一大坨出现次数相等并且出现次数都是最多的task
+        # 所以mx - 1
+        # 25 - first_less_mx_inx是指在最后要排多少个出现多大次数的不同任务
+        return max(length, (n + 1) * (mx - 1) + 25 - first_less_mx_inx)
 ```
 
 #### 622. Design Circular Queue
@@ -10082,6 +10107,7 @@ class Solution:
         :type r: int
         :type c: int
         :rtype: float
+        start at r c, K moves, still stay on the chessboard
         """
         if K == 0:
             return 1
@@ -10090,16 +10116,16 @@ class Solution:
         # 初始化为1 (一步都不走就是一种答案)
         # 我们其实将步骤这个维度当成了时间维度在不停更新
         dp = [[1] * N for _ in range(N)]
-        directions = [
-            (1, 2),
-            (-1, -2),
-            (1, -2),
-            (-1, 2),
-            (2, 1),
-            (-2, -1),
-            (2, -1),
-            (-2, 1),
-        ]
+            directions = [
+                (1, 2),
+                (-1, -2),
+                (1, -2),
+                (-1, 2),
+                (2, 1),
+                (-2, -1),
+                (2, -1),
+                (-2, 1),
+            ]
         
         # 一共走K步
         # 每一步都重新计算dp矩阵
@@ -10119,7 +10145,7 @@ class Solution:
         
         # 每一步可以选择8个方向
         # 所以K步可以有8 ** K种选择
-        return dp[r][c] / 8 ** K
+        return dp[r][c] / (8 ** K)
 ```
 
 #### 689. Maximum Sum of 3 Non-Overlapping Subarrays, Hard, Facebook
@@ -10175,6 +10201,7 @@ class Solution:
 #### 692. Top K Frequent Words
 ```
 from collections import defaultdict
+from functools import cmp_to_key
 import heapq
 
 class Solution:
@@ -10202,29 +10229,28 @@ class Solution:
         # hq.sort(cmp = self.cmp)
         # return [i[1] for i in hq]
 
-        dict = {}
-        for word in words:
-            if word not in dict:
-                dict[word] = 1
+        def cmp(a, b):
+            if a[0] > b[0] or (a[0] == b[0] and a[1] < b[1]):
+                return -1
+            elif a[0] == b[0] and a[1] == b[1]:
+                return 0
             else:
-                dict[word] += 1
-        p = []
-        for key, value in dict.items():
-            p.append((value, key))
+                return 1
 
-        p.sort(cmp=self.cmp)
-        result = []
-        for i in xrange(k):
-            result.append(p[i][1])
-        return result
-
-    def cmp(self, a, b):
-        if a[0] > b[0] or a[0] == b[0] and a[1] < b[1]:
-            return -1
-        elif a[0] == b[0] and a[1] == b[1]:
-            return 0
-        else:
-            return 1
+        mapping = defaultdict(int)
+        for word in words:
+            mapping[word] += 1
+        
+        words_counts = []
+        for word, count in mapping.items():
+            words_counts.append([count, word])
+        
+        words_counts.sort(key=cmp_to_key(cmp))
+        res = []
+        for i in range(k):
+            res.append(words_counts[i][1])
+        
+        return res
 ```
 
 #### 694. Number of Distinct Islands
@@ -10843,6 +10869,7 @@ class Solution:
         """
         :type graph: List[List[int]]
         :rtype: bool
+        输入的每一个子list都是当前index下连接的节点
         """ 
         colors = [0] * len(graph)
         for i in range(len(graph)):
