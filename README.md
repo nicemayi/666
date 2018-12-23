@@ -194,7 +194,6 @@ class Solution:
         :type x: int
         :rtype: int
         """
-        
 #         if x == 0:
 #             return 0
         
@@ -212,30 +211,22 @@ class Solution:
 #         result = int(result)
 
 #         return result
-
-        sgn = 1
-        reverse =0
-
         if x == 0:
             return 0
-
-        if x < 0:
-            sgn = -1
-            x = -x
-
-        while x > 0:
-            reverse = reverse * 10 + x % 10
-            x = x // 10
-
-        if sgn == -1:
-            reverse = reverse * sgn
-            
-        # if reverse < -(1 << 31 ) or reverse > (1 << 31) - 1:
-        #     return 0
         
-        if not -2147483648 <= reverse <= 2147483647:
+        sign = 1
+        if x < 0:
+            sign = -1
+            x = -x
+        
+        reverse = 0
+        while x > 0:
+            reverse = 10 * reverse + x % 10
+            x //= 10
+        reverse *= sign
+        
+        if not -2 ** 31 <= reverse <= 2 ** 31 - 1:
             return 0
-
         return reverse
 ```
 
@@ -395,35 +386,20 @@ class Solution:
         :type strs: List[str]
         :rtype: str
         """
-
         if not strs:
-            return ""
-        
-        minLen = len(strs[0])
-        minStr = strs[0]
-        minStrIndex = 0
-        
-        for i in range(1, len(strs)):
-            if len(strs[i]) < minLen:
-                minLen = len(strs[i])
-                minStr = strs[i]
-                minStrIndex = i
+            return ''
+        if len(strs) == 1:
+            return strs[0]
 
-        minCommon = ""
-        for i in range(len(minStr)):
-            flag = True
-            for j in range(len(strs)):
-                if j == minStrIndex:
-                    continue
-                if minStr[i] != strs[j][i]:
-                    flag = False
-                    break
-            if flag:
-                minCommon += minStr[i]
-            else:
+        min_len = min(len(s) for s in strs)
+        res = ''
+        for i in range(min_len):
+            pivot_ch = strs[0][i]
+            if any(word[i] != pivot_ch for word in strs[1:]):
                 break
+            res += pivot_ch
         
-        return minCommon
+        return res
 ```
 
 #### 15. 3Sum
@@ -828,29 +804,22 @@ class Solution:
         :type needle: str
         :rtype: int
         """
+        if not haystack:
+            return 0 if not needle else -1
+        if not needle:
+            return 0
         
-        lenh = len(haystack)
-        lenn = len(needle)
-        
-        diff = lenh - lenn
-        
-        if diff < 0 :
-            return -1
-        
-        i, j = 0, 0
-        
-        for i  in range(diff +1):
+        for i in range(len(haystack) - len(needle) + 1):
             j = 0
-            while j < lenn :
-                if haystack[i+j] != needle[j]:
+            while j < len(needle):
+                if haystack[i + j] != needle[j]:
                     break
                 j += 1
-
-            if j == lenn:
+            # 表示没有break，则肯定是j的长度此时等于needle的长度，说明完全匹配上了
+            else:
                 return i
         
-        else: 
-            return -1 
+        return -1
 ```
 
 #### 29. Divide Two Integers
@@ -1377,13 +1346,13 @@ class Solution:
         :type matrix: List[List[int]]
         :rtype: void Do not return anything, modify matrix in-place instead.
         """
-        
         row = len(matrix)
         
+        # 先水平翻转（将image水平flip）
         for i in range(row):
-            for j in range(i+1,row):
+            for j in range(i + 1, row):
                 matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
-            
+        # 再垂直翻转（将image垂直flip）
         for i in range(row):
             matrix[i].reverse()
 ```
@@ -2217,26 +2186,25 @@ class Solution:
         :type n: int
         :rtype: void Do not return anything, modify nums1 in-place instead.
         """
-        if m == 0 and n == 0:
-            nums1 = []
+        i = m - 1
+        j = n - 1
+        k = m + n - 1
         
-        if m == 0 and n > 0:
-            nums1[:n] = nums2[:n]
+        while i >= 0 and j >= 0:
+            if nums1[i] > nums2[j]:
+                nums1[k] = nums1[i]
+                i -= 1
+            else:
+                nums1[k] = nums2[j]
+                j -= 1
+            k -= 1
         
-        if m > 0 and n == 0:
-            nums1[:m] = nums1[:m]
-        
-        while m > 0 and n > 0:
-            if nums1[m - 1] >= nums2[n - 1]:
-                nums1[m + n- 1] = nums1[m - 1]
-                m -= 1
-            elif nums1[m - 1] < nums2[n - 1]:
-                nums1[m + n - 1] = nums2[n - 1]
-                n -= 1
-            
-        while n > 0:
-            nums1[:n] = nums2[:n]
-            n -= 1
+        # 此时nums1中的数字先使用完了（说明nums1中大的数字比较多）
+        # nums2还没使用完
+        while j >= 0:
+            nums1[k] = nums2[j]
+            j -= 1
+            k -= 1
 ```
 
 #### 91. Decode Ways
@@ -3094,7 +3062,6 @@ class Solution:
         :type s: str
         :rtype: bool
         """
-        
         if not s:
             return True
     
@@ -3539,27 +3506,21 @@ class Solution(object):
         :type head: ListNode
         :rtype: bool
         """
-
-        
-        if head is None:
+        if not head:
             return False
         
-        fast = head
-        slow = head
-        
+        slow = fast = head
         
         while True:
-            if fast.next is not None:
+            if fast.next:
                 slow = slow.next
                 fast = fast.next.next
-                if fast is None or slow is None:
+                if not fast or not slow:
                     return False
                 elif fast == slow:
                     return True
             else:
                 return False
-                
-        return False
 ```
 
 #### 143. Reorder List
@@ -4031,7 +3992,6 @@ class Solution(object):
         :type n: Maximum number of characters to read (int)
         :rtype: The number of characters read (int)
         """
-        
         # 输入的buf就是一个能承装n个字符的array的引用
         # 输入的buf4就是一个能承装4个字符的array的引用
         buf4 = [None] * 4
@@ -4327,19 +4287,17 @@ class Solution:
         :type k: int
         :rtype: void Do not return anything, modify nums in-place instead.
         """
-        k = k % len(nums)
-        
-        self.reverse(nums, 0, len(nums)-k-1)
-        self.reverse(nums,len(nums)-k,len(nums)-1)
-        self.reverse(nums,0, len(nums)-1)
-        
-    def reverse(self, nums, left, right):
+        k %= len(nums)
+
+        self._reverse(nums, 0, len(nums) - k - 1)
+        self._reverse(nums, len(nums) - k, len(nums) - 1)
+        self._reverse(nums, 0, len(nums) - 1)
+    
+    def _reverse(self, nums, left, right):
         while left < right:
-            nums[left],nums[right] = nums[right],nums[left]
+            nums[left], nums[right] = nums[right], nums[left]
             left += 1
             right -= 1
-        
-        return nums
 ```
 
 #### 199. Binary Tree Right Side View
@@ -4808,7 +4766,6 @@ class Solution:
         :type words: List[str]
         :rtype: List[str]
         """
-        
         if not board or not board[0]:
             return []
         
@@ -5651,7 +5608,7 @@ class Solution:
         # 这道题有几个点要注意：
         # 异或的特点： （1）a ^ 0 = a, (2) a ^ a = 0
         # diff &= -diff得到的是一个2的阶乘（二进制00001000只有一个1）
-        # 表示的是diff最右边的1的位置
+        # 结果表示是原来diff最右边的1的位置
         diff = 0
         for num in nums:
             diff ^= num
@@ -5660,7 +5617,8 @@ class Solution:
         res = [0] * 2
         for num in nums:
             # 最终的diff一定是两个目标数字的异或
-            # 第一个if条件是能准确找到唯一的一个数字（只会进入一次）
+            # 第一个if条件是能准确找到唯一的一个数字（两个解中某一个解, 这个解在diff位置有1，而另外一个解
+            # 在diff位置上一定没有1，因为diff是异或过的！！！！这样就能区分出两个解了）
             # else条件就是把所有的其他数字都异或一次
             # 因为余下只剩一个出现一次的数字
             # 其他的数字都是出现两次
@@ -5942,7 +5900,7 @@ class Solution:
         :rtype: int
         """
         if n == 1:
-            return n
+            return 1
         
         start, end = 1, n
         while start + 1 < end:
@@ -5969,7 +5927,7 @@ class ZigzagIterator(object):
         :type v1: List[int]
         :type v2: List[int]
         """
-        # 好题！！用queue来解题
+        # 好题！！用双端队列来解题
         self._queue = deque([deque(v) for v in (v1, v2) if v])
 
     def next(self):
@@ -6133,7 +6091,8 @@ class Solution:
         """
         if not rooms or not rooms[0]:
             return
-
+        
+        # 这道题思路是先找门（0的点）然后从门出发更新最近的空房间的距离
         queue = []
         for i in range(len(rooms)):
             for j in range(len(rooms[i])):
@@ -6602,7 +6561,6 @@ class Solution:
         :type B: List[List[int]]
         :rtype: List[List[int]]
         """
-        
         row = len(A)
         col = len(B[0])
         assert len(A[0]) == len(B)
@@ -7186,7 +7144,6 @@ class Solution:
         :type k: int
         :rtype: List[int]
         """
-        
         nums_count = defaultdict(int)
         for num in nums:
             nums_count[num] += 1
@@ -7237,6 +7194,7 @@ class TicTacToe:
             self.diag += offset
         if row + col == self.n - 1:
             self.anti_diag += offset
+        # 即当前这一步row col在或者行或者列或者对角或者反对角凑齐了n个
         if self.n in (self.row[row], self.col[col], self.diag, self.anti_diag):
             return 1
         if -self.n in (self.row[row], self.col[col], self.diag, self.anti_diag):
@@ -7517,6 +7475,10 @@ class Solution:
         :type matrix: List[List[int]]
         :type k: int
         :rtype: int
+        bisect_right: 比如有[1,2,3]，想要插入1
+        返回坐标1
+        而bisect_left会返回0
+        如果要插入1.5， bisect_left和bisect_right都会返回1
         """
         low, high = matrix[0][0], matrix[-1][-1]
         
@@ -7687,6 +7649,7 @@ class Solution:
         node = self.head.next
         index = 1
         while node:
+            # 这里的0就是hard coded一个点，fix住以后用来确定if的条件的
             if randint(0, index) == 0:
                 res = node
             node = node.next
@@ -7773,6 +7736,7 @@ class Solution:
         if not s:
             return True
         
+        # i是s的index j是t的index
         i = j = 0
         while i < len(s) and j < len(t):
             if s[i] == t[j]:
@@ -8137,6 +8101,7 @@ class Solution:
         """
         :type board: List[List[str]]
         :rtype: int
+        这道题是里的battleship都是矩形的
         """
         if not board or not board[0]:
             return 0
@@ -8175,7 +8140,6 @@ class Solution:
         :type root: Node
         :rtype: Node
         """
-        
         if not root:
             return
         
@@ -8507,7 +8471,9 @@ class Solution:
 
 #### 438. Find All Anagrams in a String
 ```
-class Solution:
+from collections import defaultdict
+
+class Solution(object):
     def findAnagrams(self, s, p):
         """
         :type s: str
@@ -8517,27 +8483,32 @@ class Solution:
         if not s or not p:
             return []
         
-        required = len(p)
-        p_hash = [0] * 256
+        mapping = defaultdict(int)
         for ch in p:
-            p_hash[ord(ch)] += 1
-        
-        left = right = 0
+            mapping[ch] += 1
+            
+        l = r = 0
+        required = len(mapping)
         res = []
-        while right < len(s):
-            if p_hash[ord(s[right])] > 0:
+        while r < len(s):
+            # 把这个mapping理解成“需求”
+            # 所以当左边指针扩大窗口范围的时候
+            # 相当于potentially“需求”小了一个
+            mapping[s[r]] -= 1
+            if mapping[s[r]] == 0:
                 required -= 1
-            p_hash[ord(s[right])] -= 1
-            right += 1
-            
-            if required == 0:
-                res.append(left)
-            
-            if right - left == len(p):
-                p_hash[ord(s[left])] += 1
-                if p_hash[ord(s[left])] > 0:
+
+            while required == 0:
+                mapping[s[l]] += 1
+                if mapping[s[l]] > 0:
                     required += 1
-                left += 1
+                # 重要：这里是要通过长度判断是否找到了一个p的anagram
+                # 两个坐标值差再加1才是两个坐标（左必右闭包括这两个坐标）之间所有的元素个数
+                if r - l + 1 == len(p):
+                    res.append(l)
+                l += 1
+            
+            r += 1
         
         return res
 ```
@@ -8557,7 +8528,6 @@ class Solution:
         :type l2: ListNode
         :rtype: ListNode
         """
-
         s1 = []
         s2 = []
         
@@ -8578,9 +8548,11 @@ class Solution:
             if s2:
                 res_val += s2.pop()
             res.val = res_val % 10
-            head = ListNode(res_val // 10)
-            head.next = res
-            res = head
+            curr_head = ListNode(res_val // 10)
+            curr_head.next = res
+            res = curr_head
+            # 这里是必须的,因为当前的个位数字已经被带入到之前的res node里了
+            # 只剩下要处理的十位上的数字（如果存在的话）
             res_val //= 10
         
         return res if res.val != 0 else res.next
@@ -8777,7 +8749,7 @@ class Solution:
         return dp[0][n - 1]
 ```
 
-#### 452. Minimum Number of Arrows to Burst 
+#### 452. Minimum Number of Arrows to Burst Balloons
 ```
 class Solution:
     def findMinArrowShots(self, points):
@@ -9131,7 +9103,7 @@ class Solution:
         dirs = [(-1, 1), (1, -1)]
         
         res = []
-        for i in range(m * n):
+        for _ in range(m * n):
             res.append(matrix[row][col])
             row += dirs[d][0]
             col += dirs[d][1]
@@ -9142,6 +9114,8 @@ class Solution:
             
             # 要不然：比如当中反对角线穿出去的时候，此时row < 0 并且 col >= n
             # 就会被两个if都catch住处理了
+            # 小trick：d初始为0，不停的d = 1 - d就能让d在0 1之间不停的变化
+            # 很棒的技巧！！！
             if row >= m:
                 row = m - 1
                 col += 2
@@ -9801,7 +9775,6 @@ class Solution:
         :type s: str
         :rtype: int
         """
-
         ## http://www.cnblogs.com/grandyang/p/7404777.html
         ## 在s[i]和s[j]相等这个条件下，去判断[i...j]是否是回文的时候，i和j的位置关系很重要，
         ## 如果i和j相等了，那么dp[i][j]肯定是true；
@@ -9809,7 +9782,6 @@ class Solution:
         ## 如果i和j中间只有一个字符，那么dp[i][j]还是true；
         ## 如果中间有多余一个字符存在，那么我们需要看dp[i+1][j-1]是否为true，若为true，那么dp[i][j]就是true。
         ## 赋值dp[i][j]后，如果其为true，结果res自增1
-        
         if not s:
             return 0
         
@@ -10085,6 +10057,8 @@ class Solution:
                     self._is_valid(s, left, right - 1)
             left += 1
             right -= 1
+        
+        # 此时说明s整体就是palindrome
         return True
     
     
@@ -10901,16 +10875,20 @@ class Solution:
         :type T: str
         :rtype: str
         """
-        
         count = Counter(T)
         res = []
+        # 按顺序遍历S就是能拿到S里字符的顺序
+        # 因为这道题说了S和T中都没有重复的字符
         for ch in S:
+            # 这里是将T中同时也在S中出现的字符给先给添加到res中
+            # 并将T自己的count置为0
             res.append(ch * count[ch])
             count[ch] = 0
         
         for ch in count:
             res.append(ch * count[ch])
         
+        # 这里不用filter掉’‘，因为空字符串join还是空字符串
         return ''.join(res)
 ```
 
@@ -11118,6 +11096,8 @@ class Solution:
         self._max_depth = max(depth.values())
         return self._helper(root, depth)
     
+    # dfs做的事情是根据每个node的父亲节点的深度，更新自己的深度
+    # 并将更新过后的值付给depth这个字典
     def _dfs(self, node, parent, depth):
         if node:
             depth[node] = depth[parent] + 1
@@ -11125,7 +11105,8 @@ class Solution:
             self._dfs(node.right, node, depth)
     
     # helper定义
-    #以node为根的树中，找到所有深度为全局max_depth的子树，并返回该子树的根
+    # 以node为根的树中，找到所有深度为全局max_depth的子树，并返回该子树的根
+    # 实际上返回的就是题目要求的
     def _helper(self, node, depth):
         if not node:
             return
