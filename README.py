@@ -7,7 +7,6 @@ class Solution:
         :type target: int
         :rtype: List[int]
         """
-        
         mapping = {}
         for i, num in enumerate(nums):
             if target - num in mapping:
@@ -32,7 +31,6 @@ class Solution:
         :type l2: ListNode
         :rtype: ListNode
         """
-        
         dummy_node = ListNode(-1)
         curr = dummy_node
         carry = 0
@@ -89,11 +87,9 @@ class Solution:
         :type nums2: List[int]
         :rtype: float
         """
-        
         # A, B两个排序过的数组，如果A的中位数比B的中位数小
         # 则总的A + B这个长的数组的中位数一定在A的左半部分
         # 如果B的长度太小，中位数也不会在A的左半部分。
-
         n = len(A) + len(B)
         
         if n % 2 == 0:
@@ -105,7 +101,6 @@ class Solution:
         
     
     def find_kth_largest(self, A, B, k):
-        
         if not A:
             return B[k - 1]
         
@@ -782,17 +777,20 @@ class Solution:
         :type nums: List[int]
         :rtype: int
         """
-        
         if not nums:
             return 0
         
-        p = 0
-        for i in range(len(nums) - 1):
-            if nums[i] == nums[i + 1]:
-                nums[i], nums[i + 1] = nums[i + 1], nums[i]
-                p += 1
+        if len(nums) == 1:
+            return 1
         
-        return p
+        last_pos = 0
+        for i in range(1, len(nums)):
+            if nums[i] != nums[last_pos]:
+                last_pos += 1
+                # 说明此时nums[i]是一个新数字
+                nums[last_pos] = nums[i]
+        
+        return last_pos + 1
 ```
 
 #### 28. Implement strStr()
@@ -1632,19 +1630,17 @@ class Solution:
         :type digits: List[int]
         :rtype: List[int]
         """
-        flag = 1
-        
+        carry = 1
         for i in range(len(digits) - 1, -1, -1):
-            if digits[i] + flag == 10:
+            if digits[i] + carry == 10:
                 digits[i] = 0
-                flag = 1
-            else: 
-                digits[i] += flag
-                flag = 0
+            else:
+                digits[i] += carry
+                carry = 0
                 break
         
-        if flag == 1:
-            digits.insert(0, flag)
+        if carry == 1:
+            digits.insert(0, 1)
         
         return digits
 ```
@@ -1659,7 +1655,6 @@ class Solution:
         :rtype: str
         two binary strings, return their sum
         """
-        
         res = ''
         pa = len(a) - 1
         pb = len(b) - 1
@@ -2682,7 +2677,6 @@ class Solution:
         :type root: TreeNode
         :rtype: bool
         """
-        
         if not root:
             return True
         
@@ -2693,6 +2687,7 @@ class Solution:
             self.isBalanced(root.left) and \
             self.isBalanced(root.right)
     
+    # 树的高度就是左右的最大高度再加1
     def get_max_height(self, root):
         
         if not root:
@@ -4300,6 +4295,12 @@ class Solution:
             right -= 1
 ```
 
+#### 192. Word Frequency
+```
+# Write a bash script to calculate the frequency of each word in a text file words.txt.
+cat words.txt | tr -s ' ' '\n' | sort | uniq -c | sort -r | awk '{ print $2, $1 }'
+```
+
 #### 199. Binary Tree Right Side View
 ```
 # Definition for a binary tree node.
@@ -5766,8 +5767,13 @@ class Solution:
         
         res = root.val
         while root:
+            # 第一次会pass掉这个if
+            # 因为res在外面初始过了
+            # 此时左右相等
             if abs(res - target) > abs(root.val - target):
                 res = root.val
+
+            # 大于小于号这里都可以
             if target >= root.val:
                 root = root.right
             else:
@@ -8037,7 +8043,6 @@ class Solution:
         :type num2: str
         :rtype: str
         """
-        
         res = ''
         m, n = len(num1), len(num2)
         i, j = m - 1, n - 1
@@ -8455,17 +8460,17 @@ class Solution:
             return 0
         return self.pathSum(root.left, sum) + \
             self.pathSum(root.right, sum) + \
-            self._contain_node(root, sum)
+            self._contain_root(root, sum)
     
-    # _contain_node的定义就是必须包括当前node的sum种类数目
-    def _contain_node(self, node, sum):
-        if not node:
+    # _contain_root的定义就是必须包括当前root的sum种类数目
+    def _contain_root(self, root, sum):
+        if not root:
             return 0
         res = 0
-        if node.val == sum:
+        if root.val == sum:
             res += 1
-        res += self._contain_node(node.left, sum - node.val) + \
-            self._contain_node(node.right, sum - node.val)
+        res += self._contain_root(root.left, sum - root.val) + \
+            self._contain_root(root.right, sum - root.val)
         return res
 ```
 
@@ -10409,6 +10414,8 @@ class KthLargest:
         :type nums: List[int]
         """
         # 核心：维护一个大小为k的最小堆
+        # 每次入堆得的时候都将堆顶当前堆中最小的元素pop掉
+        # 就能保持一个保证存在当前前K大值的堆了
         self._k = k
         self._data = []
         for num in nums:
