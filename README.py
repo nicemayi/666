@@ -358,19 +358,18 @@ class Solution(object):
         """
         :type s: str
         :rtype: int
+        罗马字符串变int数字
         """
-        numeral = {'M':1000, 'D':500,'C':100,'L':50,'X':10,'V':5, 'I':1} 
-        sum = 0
-        # revert the Roman str.
-        # The last(digits in ones) becomes the first to add up
-        s = s[::-1] 
-        last = None
-        for each in s:
-            if last is not None and numeral[each] < last:
-                sum -= 2*numeral[each]
-            sum += numeral[each]
-            last = numeral[each]
-        return sum
+        roman = {'M': 1000, 'D': 500, 'C': 100, 'L': 50, 'X': 10, 'V': 5, 'I': 1}
+        
+        res = 0
+        for i in range(len(s) - 1):
+            if roman[s[i]] < roman[s[i + 1]]:
+                res -= roman[s[i]]
+            else:
+                res += roman[s[i]]
+        
+        return res + roman[s[-1]]
 ```
 
 #### 14. Longest Common Prefix
@@ -579,7 +578,6 @@ class Solution:
         :type l2: ListNode
         :rtype: ListNode
         """
-        
         if not l1:
             return l2
         
@@ -2884,7 +2882,6 @@ class Solution:
         :type numRows: int
         :rtype: List[List[int]]
         """
-        
         res = []
         if numRows <= 0:
             return res
@@ -2915,16 +2912,17 @@ class Solution:
         one transaction (i.e., buy one and sell one share of the stock), 
         design an algorithm to find the maximum profit. Note that you 
         cannot sell a stock before you buy one.
+        这道题是最多只能买卖一次
         """
         ## 在当前天找到在当前天之前的最低价格，再update一下result
         if not prices:
             return 0
         
-        globalMin = 2147483647
+        global_min = 2 ** 31 - 1
         res = 0
         for i in range(1, len(prices)):
-            globalMin = min(globalMin, prices[i - 1])
-            res = max(res, prices[i] - globalMin)
+            global_min = min(global_min, prices[i - 1])
+            res = max(res, prices[i] - global_min)
         
         return res
 ```
@@ -2936,18 +2934,21 @@ class Solution:
         """
         :type prices: List[int]
         :rtype: int
-        You may complete as many transactions as you like
-        (i.e., buy one and sell one share of the stock multiple times).
+        这道题总体可以买进卖出多次
+        是指多天里可以多次
+        每一天最多只有一次买入一次卖出
+        因为多了没必要
         """
         profit = 0
-        
-        if len(prices) <=1:
+        if len(prices) <= 1:
             return profit
         
-        i = 1
-        for i in range(1,len(prices)):
-            if prices[i] - prices[i-1] >0:
-                profit += prices[i] - prices[i-1]
+        for i in range(1, len(prices)):
+            # 典型贪心问题
+            # 只要当天比前一天价格低
+            # 就交易能赚一笔钱
+            if prices[i] - prices[i - 1] > 0:
+                profit += prices[i] - prices[i - 1]
         
         return profit
 ```
@@ -3292,20 +3293,15 @@ class Solution:
         :rtype: int
         数组里面只有一个出现1次的数，其他都是两次
         """
-        nums.sort()
-        hash = {}
-        
+        mapping = set()
         for num in nums:
-            if num in hash:
-                hash[num] +=1
+            if num in mapping:
+                mapping.remove(num)
             else:
-                hash[num] = 1
+                mapping.add(num)
         
-        for num in hash:
-            if hash[num] == 1:
-                return num
-        
-        return 0
+        assert len(mapping) == 1
+        return mapping.pop()
 ```
 
 #### 137. Single Number II
@@ -4161,10 +4157,10 @@ class Solution:
         while start + 1 < end:
             if numbers[start] + numbers[end] == target:
                 return [start + 1, end + 1]
-            elif numbers[start] + numbers[end] < target:
-                start += 1
-            else:
+            elif numbers[start] + numbers[end] > target:
                 end -= 1
+            else:
+                start += 1
         
         if numbers[start] + numbers[end] == target:
             return [start + 1, end + 1]
@@ -4457,16 +4453,25 @@ class Solution:
         """
         # 迭代
         if not head:
-            return
+            return head
         
         dummy_head = ListNode(0)
         dummy_head.next = head
         
         # 以dummy_head -> 3 -> 2 -> 1举例，当前curr在3位置
         # A. 先保存2的引用为temp
-        # B. 3的next指向1
-        # C. 2(即temp)的next指向3
-        # D. dummy_head的next指向2(注意ddummy_head一直保持不变)
+        # B. 3的next指向1(temp.next为1，因为temp此时是2)
+        # C. 2(即temp)的next指向3(因为此时dummy_node的next就是指向3的)
+        # D. dummy_head的next指向2(即temp 2，注意dummy_head一直保持不变)
+        # 这样第一次循环完就变成了
+        # dummy_head -> 2 -> 3 -> 1
+        # 第二次循环中
+        # A. 先保存1的引用为temp
+        # B. 3的next指向None（因为1的next为None）
+        # C. 1(即temp)的next指向2(因为此时2是dummy_node的next)
+        # D. dummy_head的next指向1(注意dummy_head仍然是一直保持不变的)
+        # 第二次循环完就变成了
+        # dummy_head -> 1 -> 2 -> 3
         curr = head
         while curr.next:
             temp = curr.next
@@ -4933,10 +4938,16 @@ class Solution:
         """
         if not root:
             return root
+    
         left = root.left
         right = root.right
+
+        # 注意：这里不能用self.invertTree(root.right)和self.invertTree(root.left)
+        # 因为在root.right那一行
+        # 应该用的是原来的left node，此时的root.left已经被修改过了！！！
         root.left = self.invertTree(right)
         root.right = self.invertTree(left)
+
         return root
 ```
 
@@ -5182,7 +5193,6 @@ class Solution:
         :type t: str
         :rtype: bool
         """
-        
         if len(s) != len(t):
             return False
 
@@ -5458,14 +5468,13 @@ class Solution:
         :type intervals: List[Interval]
         :rtype: bool
         """
+        interval_list = [(i.start, i.end) for i in intervals]
+        interval_list.sort()
         
-        intervals_list = [(i.start, i.end) for i in intervals]
-        intervals_list.sort()
-        
-        for i in range(1, len(intervals_list)):
-            _, last_end = intervals_list[i - 1]
-            start, end = intervals_list[i]
-            if start < last_end:
+        for i in range(1, len(interval_list)):
+            curr_start, _ = interval_list[i]
+            _, last_end = interval_list[i - 1]
+            if curr_start < last_end:
                 return False
         
         return True
@@ -5592,8 +5601,15 @@ class Solution:
     def _dfs(self, node, curr, res):
         if not node.left and not node.right:
             res.append(curr + str(node.val))
+            # 其实这里的return可以不加
+            # 加在这里是为了方便可读
+            return
+
+        # 这道题跟标准dfs稍微不同
+        # 在函数内判断是否node为空，如果不空才可以进入下一次递归
         if node.left:
             self._dfs(node.left, curr + str(node.val) + '->', res)
+
         if node.right:
             self._dfs(node.right, curr + str(node.val) + '->', res)
 ```
@@ -6025,6 +6041,8 @@ class Solution:
         :rtype: void Do not return anything, modify nums in-place instead.
         """
         available_pos_for_0 = 0
+        # i指针始终在available_pos_for_0之后的
+        # 不停的将i指针指向的非零数字移到available_pos_for_0上去
         for i in range(len(nums)):
             if nums[i] != 0:
                 nums[i], nums[available_pos_for_0] = nums[available_pos_for_0], nums[i]
@@ -7103,13 +7121,10 @@ class Solution:
         :type s: str
         :rtype: str
         """
-        
-        newStr =''
-        
-        for i in range(1,len(s)+1):
-            newStr = newStr + s[-i]
-        
-        return newStr
+        res = ''
+        for i in range(len(s) - 1, -1, -1):
+            res += s[i]
+        return res
 ```
 
 #### 346. Moving Average from Data Stream
@@ -7244,22 +7259,21 @@ class Solution:
         :type nums2: List[int]
         :rtype: List[int]
         """
-        length1 = len(nums1)
-        length2 = len(nums2)
+        len1 = len(nums1)
+        len2 = len(nums2)
         
         nums1.sort()
         nums2.sort()
         
-        i,j=0,0
+        i = j = 0
         res = []
-        
-        while i<length1 and j < length2:      
-            if nums1[i] < nums2[j]:
-                i += 1
-            elif nums1[i] > nums2[j]:
+        while i < len1 and j < len2:
+            if nums1[i] > nums2[j]:
                 j += 1
+            elif nums1[i] < nums2[j]:
+                i += 1
             else:
-                res.append(nums2[j])
+                res.append(nums1[i])
                 i += 1
                 j += 1
         
@@ -7425,6 +7439,7 @@ class Solution:
         :type b: int
         :rtype: int
         """
+        # 这道题Python做没什么意义
         # Python没有无符号右移操作
         # 并且当左移操作的结果超过最大整数范围时
         # 会自动将int类型转换为long类型
@@ -7707,24 +7722,20 @@ class Solution:
 
 #### 387. First Unique Character in a String
 ```
-from collections import defaultdict
+from collections import Counter
 
 class Solution:
-    def firstUniqChar(self, input_string):
+    def firstUniqChar(self, s):
         """
         :type s: str
         :rtype: int
         """
-        
-        if not input_string:
+        if not s:
             return -1
-
-        string_hash = defaultdict(int)
-        for i in range(len(input_string)):
-            string_hash[input_string[i]] += 1
         
-        for i in range(len(input_string)):
-            if string_hash[input_string[i]] == 1:
+        mapping = Counter(s)
+        for i in range(len(s)):
+            if mapping[s[i]] == 1:
                 return i
         
         return -1
@@ -8032,6 +8043,27 @@ class Solution:
                     stones_hash[stone + jumps + 1].add(jumps + 1)
         
         return len(stones_hash[stones[-1]]) > 0
+```
+
+#### 412. Fizz Buzz
+```
+class Solution:
+    def fizzBuzz(self, n):
+        """
+        :type n: int
+        :rtype: List[str]
+        """
+        res = []
+        for i in range(1, n + 1):
+            if i % 3 == 0 and i % 5 == 0:
+                res.append('FizzBuzz')
+            elif i % 3 == 0:
+                res.append('Fizz')
+            elif i % 5 == 0:
+                res.append('Buzz')
+            else:
+                res.append(str(i))
+        return res
 ```
 
 #### 415. Add Strings
@@ -8793,6 +8825,7 @@ class Solution:
         """
         :type grid: List[List[int]]
         :rtype: int
+        求二维grid里的周长
         """
         if not grid or not grid[0]:
             return 0
@@ -8807,6 +8840,7 @@ class Solution:
                 # 或者是墙边或者临近的那个点是0
                 # res就可以加1
                 # 两个点只要相邻，相邻边就不是周长一部分
+                # 注意这里是4个if，相当于四个方向分别去判断是否需要加1
                 if j == 0 or grid[i][j - 1] == 0:
                     res += 1
                 if i == 0 or grid[i - 1][j] == 0:
@@ -9246,14 +9280,14 @@ class Solution:
 #         self.val = x
 #         self.left = None
 #         self.right = None
-
 class Solution:
     def diameterOfBinaryTree(self, root):
         """
         :type root: TreeNode
         :rtype: int
+        从左边最深的点经过root到右边最深的点
+        叫做直径
         """
-        
         self.res = 0
         self._dfs(root)
         return self.res
@@ -9975,20 +10009,21 @@ class Solution:
         :type nums: List[int]
         :rtype: int
         """
-        
         if not nums:
             return 0
         
-        res = 1
-        curr = 1
+        global_max = 1
+        local_max = 1
         for i in range(1, len(nums)):
             if nums[i] > nums[i - 1]:
-                curr += 1
+                local_max += 1
             else:
-                res = max(res, curr)
-                curr = 1
-        
-        return max(res, curr)
+                global_max = max(global_max, local_max)
+                local_max = 1
+
+        # 这里是因为遍历到最后一个退出的时候
+        # 可能没有经历过循环中的else
+        return max(global_max, local_max)
 ```
 
 #### 678. Valid Parenthesis String
@@ -10284,7 +10319,6 @@ class Solution:
         :type grid: List[List[int]]
         :rtype: int
         """
-        
         if not grid or not grid[0]:
             return 0
         
@@ -10520,7 +10554,6 @@ class MaxStack:
         """
         self._data = []
         self._max_stack = []
-        
 
     def push(self, x):
         """
@@ -10540,20 +10573,17 @@ class MaxStack:
             self._max_stack.pop()
         return curr
         
-
     def top(self):
         """
         :rtype: int
         """
         return self._data[-1]
         
-
     def peekMax(self):
         """
         :rtype: int
         """
         return self._max_stack[-1]
-        
 
     def popMax(self):
         """
@@ -11010,6 +11040,7 @@ class Solution:
         parsed_T = self._helper(T)
         return parsed_S == parsed_T
     
+    # helper定义是将string的#都用了之后的string是什么
     def _helper(self, string):
         if not string:
             return string
@@ -11021,6 +11052,9 @@ class Solution:
             if ch != '#':
                 res.append(ch)
             else:
+                # 如果#数目多于当前res的长度
+                # 相当于多打了delete键而已
+                # 并没有什么影响（当前的res stack已经被清空了）
                 if res:
                     res.pop()
         
@@ -11034,7 +11068,10 @@ class Solution:
         """
         :type A: List[int]
         :rtype: int
+        是说A中间肯定存在一个山峰点，找出来对应的坐标
         """
+        # 这道题是确保了输入的array一定是符合条件的moutain array
+        # 所以省去了很多判断
         start, end = 0, len(A) - 1
         while start + 1 < end:
             mid = start + (end - start) // 2
@@ -11220,8 +11257,8 @@ class Solution:
         """
         :type A: List[int]
         :rtype: bool
+        判断是否是单调递增或者单调递减Array
         """
-        
         if not A or len(A) <= 2:
             return True
         
@@ -11290,6 +11327,7 @@ class Solution:
             else:
                 # 如果没有找到不一样的字符
                 # 则理论上短的word应该小于长的word
+                # 就是说last_word的长度在这个else block里应该是小于curr_word的长度
                 # 比如 "app"是应该小于"apple"的
                 # 所以如果出现"app" > "apple"
                 # 可以直接返回False
