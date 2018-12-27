@@ -4810,6 +4810,29 @@ class Solution:
         visited[i][j] = False
 ```
 
+#### 214. Shortest Palindrome
+```
+class Solution:
+    def shortestPalindrome(self, s):
+        """
+        :type s: str
+        :rtype: str
+        Given a string s, you are allowed to convert it to a palindrome 
+        by adding characters in front of it. Find and return the shortest 
+        palindrome you can find by performing this transformation.
+        """
+        # 这道题下面的brute force能AC
+        # 还有two pointers解法
+        # 最优解应该是O(n)的KMP
+        n = len(s)
+        rev_s = s[::-1]
+        for i in range(n):
+            if s[:n - i] == rev_s[i:]:
+                return rev_s[:i] + s
+        
+        return ''
+```
+
 #### 215. Kth Largest Element in an Array
 ```
 class Solution:
@@ -4867,6 +4890,53 @@ class Solution:
         return final_pivot_pos
 ```
 
+#### 218. The Skyline Problem
+```
+class Solution:
+    def getSkyline(self, buildings):
+        """
+        :type buildings: List[List[int]]
+        :rtype: List[List[int]]
+        """
+        h = []
+        for start, end, height in buildings:
+            h.append((start, -height))
+            h.append((end, height))
+        h.sort()
+        
+        pre = curr = 0
+        m = []
+        m.append(0)
+        res = []
+        
+        # 思路很简单：
+        # 1. 先将(start, -height)和(end, height)都加入到h中，
+        # 并且按照坐标排个序
+        # 2. 使用一个最大堆m
+        # 3. 遍历h，通过height的正负号判断是start还是end
+        # 如果是start，二话不说加入堆，并判断当前堆顶(curr)是否前一次的堆顶元素(pre)一样
+        # 如果不一样，说明这次操作堆顶发生了变化，加入到res中，并更新pre
+        # 如果是end，说明需要从堆中pop掉
+        
+        # 但是这道题比较坑的是python没有支持remove任意元素的heap（类似c++ multiset）
+        # 可以参考库sortedcontainers但是不是buildin的
+        # LC判断也挺坑，多提交几次某次就通过了（尽管faster than大概小于1%的样子）
+        # 可能是底层还是直接判断执行时间
+        for start, height in h:
+            if height < 0:
+                m.append(-height)
+                m.sort(reverse=True)
+            else:
+                m.remove(height)
+                m.sort(reverse=True)
+            curr = m[0]
+            if curr != pre:
+                res.append([start, curr])
+                pre = curr
+        
+        return res
+```
+
 #### 222. Count Complete Tree Nodes
 ```
 # Definition for a binary tree node.
@@ -4921,6 +4991,83 @@ class Solution:
         return self.countNodes(root.left) + self.countNodes(root.right) + 1
 ```
 
+#### 224. Basic Calculator
+```
+class Solution:
+    def calculate(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        res = curr = 0
+        stack = []
+        sign = 1
+        
+        for ch in s:
+            if '0' <= ch <= '9':
+                curr = 10 * curr + int(ch)
+            elif ch in '+-':
+                res += sign * curr
+                curr = 0
+                sign = 1 if ch == '+' else -1
+            elif ch == '(':
+                stack.append(res)
+                stack.append(sign)
+                # 遇到左括号就讲res入栈并重置res为0, sign为1
+                # 这样在连续遇到左括号时候就不会额外加入什么值
+                sign, res = 1, 0
+            elif ch == ')':
+                res += sign * curr
+                res *= stack.pop()
+                res += stack.pop()
+                curr = 0
+        
+        return res + curr * sign
+
+# # 下面的解法通不过最后一个大test case (35/36)
+# # 实际上思路和计算器III带括号和加减乘除的一样
+# class Solution:
+#     def calculate(self, s):
+#         """
+#         :type s: str
+#         :rtype: int
+#         """
+#         n = len(s)
+#         num = curr_res = res = 0
+#         op = '+'
+#         i = 0
+#         while i < n:
+#             ch = s[i]
+#             if '0' <= ch <= '9':
+#                 num = 10 * num + int(ch)
+#             elif ch == '(':
+#                 cnt = 0
+#                 j = i
+#                 while j < n:
+#                     if s[j] == '(':
+#                         cnt += 1
+#                     elif s[j] == ')':
+#                         cnt -= 1
+#                     if cnt == 0:
+#                         break
+#                     j += 1
+#                 num = self.calculate(s[i + 1:j])
+#                 i = j
+            
+#             if ch in '+-' or i == n - 1:
+#                 if op == '+':
+#                     curr_res += num
+#                 elif op == '-':
+#                     curr_res -= num
+#                 res += curr_res
+#                 curr_res = 0
+#                 num = 0
+#                 op = ch
+#             i += 1
+        
+#         return res
+```
+
 #### 226. Invert Binary Tree
 ```
 # Definition for a binary tree node.
@@ -4958,6 +5105,7 @@ class Solution(object):
         """
         :type s: str
         :rtype: int
+        这道题是有加减乘除但是没有括号的
         """
         num = 0
         n = len(s)
@@ -9806,6 +9954,66 @@ class Solution:
         return res
 ```
 
+#### 642. Design Search Autocomplete System
+```
+class TrieNode(object):
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+        self.sentence = ''
+        self.hotness = 0
+        
+class AutocompleteSystem():
+    def __init__(self, sentences, times):
+        self.root = TrieNode()
+        self.prefix = ''
+        for sentence, hotness in zip(sentences, times):
+            self.add(sentence, hotness)
+
+    def add(self, sentence, hotness):
+        curr = self.root
+        for ch in sentence:
+            if ch not in curr.children:
+                curr.children[ch] = TrieNode()
+            curr = curr.children[ch]
+        curr.is_end = True
+        curr.sentence = sentence
+        # 为何这里要用减法？
+        # 这道题是要求hostness从大到小排序
+        # 而sentence是按照ord从小到大排序！！！
+        # 比如空格的ord是32， 字母r的ord是114
+        # 两者hotness一样的情况下，
+        # 虽然ord的值是r大，但是这道题认为空格是排在字母r前面的
+        # 所以要优先返回这个空格！！！
+        # 所以单纯的加hotness然后妄想sort(reverse=True)这道题是行不通的
+        curr.hotness -= hotness
+
+    def input(self, c):
+        if c == '#':
+            self.add(self.prefix, 1)
+            self.prefix = ''
+            return []
+        else:
+            self.prefix += c
+            curr = self.root
+            for ch in self.prefix:
+                if ch not in curr.children:
+                    return []
+                curr = curr.children[ch]
+            res = self._dfs(curr)
+            res.sort()
+            return [i[1] for i in res[:3]]
+
+    def _dfs(self, root):
+        res = []
+        if root:
+            if root.is_end:
+                res.append((root.hotness, root.sentence))
+            for _, node in root.children.items():
+                res.extend(self._dfs(node))
+        return res
+```
+
 #### 647. Palindromic Substrings
 ```
 class Solution:
@@ -9921,6 +10129,38 @@ class Solution(object):
         if node is not self._root:
             cuts.add(res)   
         return res
+```
+
+#### 670. Maximum Swap
+```
+class Solution:
+    def maximumSwap(self, num):
+        """
+        :type num: int
+        :rtype: int
+        """
+        num_list = list(int(i) for i in str(num))
+        n = len(num_list)
+
+        last = [-1] * 10
+        for i in range(n):
+            last[num_list[i]] = i
+
+        for i in range(n):
+            for d in range(9, num_list[i], -1):
+                # 当前遍历的数字是num_list[i]
+                # d是从9到num_list[i]倒序遍历的
+                # 则d一定是比num_list[i]大的
+                # 如果d在原来num string中出现的位置是在i之后的
+                # 说明我们找到了一个swap的位置
+                # 就可以交换并且return了
+                if last[d] > i:
+                    num_list[i], num_list[last[d]] = num_list[last[d]], num_list[i]
+                    return int(''.join(str(i) for i in num_list))
+        
+        # 如果没有在循环中return，说明没有找到swap的点（说明当前数字倒序）
+        # 直接return即可
+        return num
 ```
 
 #### 671. Second Minimum Node In a Binary Tree
@@ -10802,10 +11042,12 @@ class Solution:
         """
         :type s: str
         :rtype: int
+        这道题是既有加减乘除又有括号的
         """
         n = len(s)
-        # num指的是在循环中遇到的数字（在左右两个operator之间或者左右括号之间的数字）
+        # num指的是在循环中遇到的数字（在左右两个op之间或者左右括号之间的数字）
         # curr_res是在出现一个op之后，出现下一个op之前的结果
+        # num的优先级要比curr_res高
         num = curr_res = res = 0
         op = '+'
         i = 0
