@@ -979,7 +979,6 @@ class Solution:
         :type target: int
         :rtype: int
         """
-
         if not nums:
             return -1
         
@@ -1021,7 +1020,6 @@ class Solution:
         :type target: int
         :rtype: List[int]
         """
-        
         if not nums:
             return [-1, -1]
         
@@ -1098,6 +1096,58 @@ class Solution:
                 row[i].add(board[i][j]) 
                 col[j].add(board[i][j])
                 grid[g].add(board[i][j])
+        
+        return True
+```
+
+#### 37. Sudoku Solver
+```
+class Solution:
+    def solveSudoku(self, board):
+        """
+        :type board: List[List[str]]
+        :rtype: void Do not return anything, modify board in-place instead.
+        """
+        if (
+            not board
+            or not board[0]
+            or len(board) != 9
+            or len(board[0]) != 9
+        ):
+            return
+        
+        self._dfs(board, 0, 0)
+        
+    def _dfs(self, board, i, j):
+        if i == 9:
+            return True
+        if j == 9:
+            return self._dfs(board, i + 1, 0)
+        
+        if board[i][j] == '.':
+            for k in range(1, 10):
+                board[i][j] = str(k)
+                if self._is_valid(board, i, j) and self._dfs(board, i, j + 1):
+                    return True
+                board[i][j] = '.'
+        else:
+            return self._dfs(board, i, j + 1)
+        
+        return False
+    
+    def _is_valid(self, board, i, j):
+        for col in range(9):
+            if col != j and board[i][j] == board[i][col]:
+                return False
+        
+        for row in range(9):
+            if row != i and board[i][j] == board[row][j]:
+                return False
+        
+        for row in range(i // 3 * 3, i // 3 * 3 + 3):
+            for col in range(j // 3 * 3, j // 3 * 3 + 3):
+                if (row != i or col != j) and board[i][j] == board[row][col]:
+                    return False
         
         return True
 ```
@@ -1437,6 +1487,39 @@ class Solution:
             if curr_row_inx - i == abs(positions[curr_row_inx] - positions[i]) or \
                 positions[curr_row_inx] == positions[i]:
                 return False
+        return True
+```
+
+#### 52. N-Queens II
+```
+class Solution:
+    def totalNQueens(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        self._res = 0
+        self._dfs(0, [None] * n)
+        return self._res
+
+    def _dfs(self, row, pos):
+        n = len(pos)
+
+        if row == n:
+            self._res += 1
+            return
+        
+        for col in range(n):
+            if self._is_valid(row, col, pos):
+                pos[row] = col
+                self._dfs(row + 1, pos)
+                pos[row] = None
+    
+    def _is_valid(sefl, row, col, pos):
+        for i in range(row):
+            if pos[i] == col or abs(row - i) == abs(col - pos[i]):
+                return False
+        
         return True
 ```
 
@@ -3255,6 +3338,44 @@ class Solution:
         return self._dfs(node.left, curr_sum) + self._dfs(node.right, curr_sum)
 ```
 
+#### 130. Surrounded Regions
+```
+class Solution:
+    def solve(self, board):
+        """
+        :type board: List[List[str]]
+        :rtype: void Do not return anything, modify board in-place instead.
+        """
+        if not board or not board[0]:
+            return
+        
+        m, n = len(board), len(board[0])
+        for i in range(m):
+            for j in range(n):
+                if (i in (0, m - 1) or j in (0, n - 1)) and board[i][j] == 'O':
+                    self._dfs(board, i, j)
+        
+        for i in range(m):
+            for j in range(n):
+                if board[i][j] == 'O':
+                    board[i][j] = 'X'
+                if board[i][j] == '#':
+                    board[i][j] = 'O'
+    
+    def _dfs(self, board, i, j):
+        board[i][j] = '#'
+
+        m, n = len(board), len(board[0])
+        if i > 0 and board[i - 1][j] == 'O':
+            self._dfs(board, i - 1, j)
+        if j > 0 and board[i][j - 1] == 'O':
+            self._dfs(board, i, j - 1)
+        if i < m - 1 and board[i + 1][j] == 'O':
+            self._dfs(board, i + 1, j)
+        if j < n - 1 and board[i][j + 1] == 'O':
+            self._dfs(board, i, j + 1)
+```
+
 #### 133. Clone Graph
 ```
 # Definition for a undirected graph node
@@ -4039,6 +4160,33 @@ class Solution(object):
         return i
 ```
 
+#### 159. Longest Substring with At Most Two Distinct Characters
+```
+class Solution:
+    def lengthOfLongestSubstringTwoDistinct(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        mapping = {}
+        l = r = 0
+        res = 0
+        while r < len(s):
+            if s[r] not in mapping:
+                mapping[s[r]] = 1
+            else:
+                mapping[s[r]] += 1
+            while l < r and len(mapping) > 2:
+                mapping[s[l]] -= 1
+                if mapping[s[l]] == 0:
+                    del mapping[s[l]]
+                l += 1
+            res = max(res, r - l + 1)
+            r += 1
+        
+        return res
+```
+
 #### 160. Intersection of Two Linked Lists
 ```
 # Definition for singly-linked list.
@@ -4242,6 +4390,35 @@ class BSTIterator(object):
         while node:
             self.stack.append(node)
             node = node.left
+```
+
+#### 179. Largest Number
+```
+from functools import cmp_to_key
+
+def _cmp(a, b):
+    ab = str(a) + str(b)
+    ba = str(b) + str(a)
+    # 比如a=9, b = 30
+    # ab=930, ba=309
+    # 我们希望大的ab排在前面，所以返回-1
+    # 在比较器里-1会将大于号左边的排在前面
+    if ab > ba:
+        return -1
+    if ab == ba:
+        return 0
+    return 1
+
+class Solution:
+    def largestNumber(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: str
+        """
+        # 这样排过序以后 '9' > '30'会排在前面
+        nums.sort(key=cmp_to_key(_cmp))
+        res = ''.join(str(i) for i in nums)
+        return res if res[0] != '0' else '0'
 ```
 
 #### 187. Repeated DNA Sequences
@@ -4545,7 +4722,6 @@ class Trie:
         """
         self._root = Node()
         
-
     def insert(self, word):
         """
         Inserts a word into the trie.
@@ -4560,7 +4736,6 @@ class Trie:
             curr = curr.children[index]
         curr.is_word = True
         
-
     def search(self, word):
         """
         Returns if the word is in the trie.
@@ -4935,6 +5110,45 @@ class Solution:
                 pre = curr
         
         return res
+```
+
+#### 220. Contains Duplicate III
+```
+class Solution:
+    def containsNearbyAlmostDuplicate(self, nums, k, t):
+        """
+        :type nums: List[int]
+        :type k: int
+        :type t: int
+        :rtype: bool
+        问在num中是否存在两个index
+        这两个index的距离小于等于k
+        并且他们对应的值的差小于等于t
+        """
+        # 基本思路就是桶排序的方法
+        # 当前桶号是m，num[i]通过整除桶的range w
+        # 就能得到num[i]这个值对应的桶号
+        # 满足值小于等于t的元素一定属于当前同一个桶或者临近桶
+        if t < 0:
+            return False
+        n = len(nums)
+        d = {}
+        # w是桶自身的range
+        w = t + 1
+        for i in range(n):
+            m = nums[i] // w
+            # 注意：下面三个if都是处理值t的
+            if m in d:
+                return True
+            if m - 1 in d and abs(nums[i] - d[m - 1]) <= t:
+                return True
+            if m + 1 in d and abs(nums[i] - d[m + 1]) <= t:
+                return True
+            d[m] = nums[i]
+            # 这个if才是处理index距离k的
+            if i >= k:
+                del d[nums[i - k] // w]
+        return False
 ```
 
 #### 222. Count Complete Tree Nodes
@@ -7094,26 +7308,23 @@ class Solution:
         :type tickets: List[List[str]]
         :rtype: List[str]
         """
-        
         graph = defaultdict(list)
         for from_, to_ in tickets:
             graph[from_].append(to_)
         
         for each in graph:
-            graph[each].sort()
+            graph[each].sort(reverse=True)
         
         res = []
-        self.dfs(graph, "JFK", res)
+        self._helper(graph, 'JFK', res)
         return res[::-1]
     
-    
-    def dfs(self, graph, from_, results):
-        
+    def _helper(self, graph, from_, res):
         while graph[from_]:
-            curr = graph[from_].pop(0)
-            self.dfs(graph, curr, results)
-        
-        results.append(from_)
+            curr = graph[from_].pop()
+            self._helper(graph, curr, res)
+        # 本质上就是图的后序遍历 
+        res.append(from_)
 ```
 
 #### 336. Palindrome Pairs, Hard, Facebook
