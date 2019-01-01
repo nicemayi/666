@@ -351,6 +351,28 @@ class Solution:
         return res
 ```
 
+#### 12. Integer to Roman
+```
+class Solution:
+    def intToRoman(self, num):
+        """
+        :type num: int
+        :rtype: str
+        """
+        # 一共7种类型
+        # 除了最后一个I
+        # 每一种类型还有左边减去下一位的类型
+        # 相当于一共处理13种情况
+        vals = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+        strs = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I']
+        res = ''
+        for i in range(len(vals)):
+            while num >= vals[i]:
+                num -= vals[i]
+                res += strs[i]
+        return res
+```
+
 #### 13. Roman to Integer
 ```
 class Solution(object):
@@ -614,17 +636,15 @@ class Solution:
         Given number of n, meaning n pairs of parentheses
         write a function to generate all combinations of well-formed parentheses.
         """
-        
         res = []
-        self.dfs(n, n, "", res)
+        self._dfs(n, n, '', res)
         return res
     
     ## left表示当前剩余的左括号数目
     ## right表示当前剩余的右括号数目
     ## 如果当前剩余的左括号数目大于当前剩余的右括号数目
     ## 肯定是出现了不合法的情况（例如：先一个")..."的情况）
-    def dfs(self, left, right, current, results):
-        
+    def _dfs(self, left, right, current, results):
         if left > right:
             return
         
@@ -633,9 +653,9 @@ class Solution:
             return
         
         if left > 0:
-            self.dfs(left - 1, right, current + "(", results)
+            self._dfs(left - 1, right, current + '(', results)
         if right > 0:
-            self.dfs(left, right - 1, current + ")", results)
+            self._dfs(left, right - 1, current + ')', results)
 ```
 
 #### 23. Merge k Sorted Lists, Hard, Facebook, Linkedin
@@ -1152,6 +1172,38 @@ class Solution:
         return True
 ```
 
+#### 38. Count and Say
+```
+class Solution:
+    def countAndSay(self, n):
+        """
+        :type n: int
+        :rtype: str
+        """
+        if n <= 0:
+            return '1'
+        # 对于前一个数
+        # 找出相同元素的个数
+        # 把个数和该元素存到curr里
+        # 最后在每次循环里更新res
+        # 核心：数相同的数字！(这叫count)
+        res = '1'
+        i = 0
+        for _ in range(n - 1):
+            curr = ''
+            i = 0
+            while i < len(res):
+                cnt = 1
+                while i + 1 < len(res) and res[i] == res[i + 1]:
+                    cnt += 1
+                    i += 1
+                curr += str(cnt) + res[i]
+                i += 1
+            res = curr
+
+        return res
+```
+
 #### 39. Combination Sum
 ```
 class Solution:
@@ -1185,6 +1237,36 @@ class Solution:
             current.append(candidates[i])
             self.helper(candidates, target - candidates[i], i, current, results)
             current.pop()
+```
+
+#### 41. First Missing Positive
+```
+class Solution:
+    def firstMissingPositive(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        n = len(nums)
+
+        for i in range(n):
+            while nums[i] > 0 and nums[i] <= n and nums[i] != nums[nums[i] - 1]:
+                # python交换操作
+                # 先将等号左边的第一个数字存为temp
+                # 然后所有对左边第一个数字的赋值操作（对应右边第一个数字）
+                # 是使用temp的
+                # 此时对左边第二个数字再进行赋值操作
+                # 但是这时候引用的nums[i]是之前变化过的！！！！！
+                # 这是个大坑要注意！！！
+                # 这道题下面的交换顺序是通不过的！！！
+                # nums[i], nums[nums[i] - 1] = nums[nums[i] - 1], nums[i]
+                nums[nums[i] - 1], nums[i] = nums[i], nums[nums[i] - 1]
+        
+        for i in range(n):
+            if nums[i] != i + 1:
+                return i + 1
+        
+        return n + 1
 ```
 
 #### 42. Trapping Rain Water, Hard, Facebook
@@ -2099,6 +2181,33 @@ class Solution:
     #     return ans
 ```
 
+#### 77. Combinations
+```
+class Solution:
+    def combine(self, n, k):
+        """
+        :type n: int
+        :type k: int
+        :rtype: List[List[int]]
+        1到n中选取不重复的k个数字凑成combination
+        """
+        res = []
+        self._dfs(n, k, 0, [], res)
+        return res
+    
+    # df定义：从start开始到n，在现有curr基础上遍历
+    # 往curr里添加数字
+    def _dfs(self, n, k, start, curr, res):
+        if len(curr) == k:
+            res.append(curr[:])
+            return
+        
+        for i in range(start + 1, n + 1):
+            curr.append(i)
+            self._dfs(n, k, i, curr, res)
+            curr.pop()
+```
+
 #### 78. Subsets
 ```
 class Solution:
@@ -2698,6 +2807,39 @@ class Solution:
         return root
 ```
 
+#### 106. Construct Binary Tree from Inorder and Postorder Traversal
+```
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution:
+    def buildTree(self, inorder, postorder):
+        """
+        :type inorder: List[int]
+        :type postorder: List[int]
+        :rtype: TreeNode
+        """
+        if not inorder:
+            return
+        
+        root = TreeNode(postorder[-1])
+        split_index = inorder.index(postorder[-1])
+        
+        # 核心！！！
+        # 中序： [...A, x, ...B]
+        # 后序： [...A, ...B, x]
+        # 即后序的前半部分就是中序的前半部分
+        # 后序的后半部分（除去最后一个点）就是中序的后半部分
+        root.left = self.buildTree(inorder[:split_index], postorder[:split_index])
+        root.right = self.buildTree(inorder[split_index + 1:], postorder[split_index:-1])
+        
+        return root
+```
+
 #### 109. Convert Sorted List to Binary Search Tree
 ```
 # Definition for singly-linked list.
@@ -2811,6 +2953,65 @@ class Solution:
             return 1
         
         return 1 + min(self.get_min(root.left), self.get_min(root.right))
+
+# 解法2：跟上面类似，但是简洁一些
+class Solution:
+    def minDepth(self, root):
+        """
+        :type root: TreeNode
+        :rtype: int
+        """
+        # 这道题还可以用层序遍历来解
+        # 如果访问到一个叶子节点
+        # 则直接返回当前的深度
+        if not root:
+            return 0
+        
+        if not root.left and not root.right:
+            return 1
+        
+        if not root.left:
+            return 1 + self.minDepth(root.right)
+        
+        if not root.right:
+            return 1 + self.minDepth(root.left)
+        
+        return 1 + min(self.minDepth(root.left), self.minDepth(root.right))
+```
+
+#### 113. Path Sum II
+```
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution:
+    def pathSum(self, root, sum):
+        """
+        :type root: TreeNode
+        :type sum: int
+        :rtype: List[List[int]]
+        """
+        res = []
+        self._helper(root, sum, [], res)
+        return res
+    
+    def _helper(self, node, sum, curr, res):
+        if not node:
+            return
+        
+        curr.append(node.val)
+        
+        if sum == node.val and not node.left and not node.right:
+            res.append(curr[:])
+        
+        self._helper(node.left, sum - node.val, curr, res)
+        self._helper(node.right, sum - node.val, curr, res)
+        
+        curr.pop()
 ```
 
 #### 114. Flatten Binary Tree to Linked List
@@ -4468,6 +4669,22 @@ class Solution:
             right -= 1
 ```
 
+#### 191. Number of 1 Bits
+```
+class Solution(object):
+    def hammingWeight(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        # 跟汉明距离那道题很像
+        res = 0
+        for i in range(32):
+            if n & (1 << i) != 0:
+                res += 1
+        
+        return res
+```
 #### 192. Word Frequency
 ```
 # Write a bash script to calculate the frequency of each word in a text file words.txt.
@@ -4508,6 +4725,31 @@ class Solution:
                     queue.append(curr.right)
             
         return res
+```
+
+#### 195. Tenth Line
+```
+# 这道题是说给一个file.txt的文件，print出第10行
+# 用awk来解答
+cnt=0
+while read line && [ $cnt -le 10 ]; do
+  let 'cnt = cnt + 1'
+  if [ $cnt -eq 10 ]; then
+    echo $line
+    exit 0
+  fi
+done < file.txt
+
+# Solution 2
+awk 'FNR == 10 {print }'  file.txt
+# OR
+awk 'NR == 10' file.txt
+
+# Solution 3
+sed -n 10p file.txt
+
+# Solution 4
+tail -n+10 file.txt|head -1
 ```
 
 #### 200. Number of Islands
@@ -5393,6 +5635,48 @@ class Solution:
         return 1 + self._count(node.left) + self._count(node.right)
 ```
 
+#### 234. Palindrome Linked List
+```
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, x):
+#         self.val = x
+#         self.next = None
+# 这道题可以用stack 空间复杂度O(n)
+# 也可以如下用翻转链表，空间复杂度O(1)
+class Solution:
+    def isPalindrome(self, head):
+        """
+        :type head: ListNode
+        :rtype: bool
+        """
+        if not head or not head.next:
+            return True
+        
+        slow = fast = head
+        while fast.next and fast.next.next:
+            slow = slow.next
+            fast = fast.next.next
+            
+        curr = slow.next
+        while curr.next:
+            temp = curr.next
+            curr.next = temp.next
+            temp.next = slow.next
+            slow.next = temp
+        
+        left = head
+        right = slow.next
+        
+        while left and right:
+            if left.val != right.val:
+                return False
+            left = left.next
+            right = right.next
+        
+        return True
+```
+
 #### 235. Lowest Common Ancestor of a Binary Search Tree
 ```
 # Definition for a binary tree node.
@@ -5976,6 +6260,40 @@ class Solution:
             self._dfs(node.right, curr + str(node.val) + '->', res)
 ```
 
+#### 259. 3Sum Smaller
+```
+class Solution:
+    def threeSumSmaller(self, nums, target):
+        """
+        :type nums: List[int]
+        :type target: int
+        :rtype: int
+        nums中有多少个三元索引组合，sum和小于target
+        """
+        nums.sort()
+        total = 0
+        # 循环定义：固定nums[i]（即可得到target - nums[i]）
+        # 然后从i+1到最后寻找多少组的和小于target - nums[i]
+        for i in range(len(nums) - 2):
+            total += self._two_sum_smaller(nums, i + 1, target - nums[i])
+        return total
+    
+    def _two_sum_smaller(self, nums, start, target):
+        total = 0
+        l, r = start, len(nums) - 1
+        while l < r:
+            if nums[l] + nums[r] < target:
+                # 注意这里不需要-1或者+1
+                # 因为是找二元组的个数
+                # -1是说l和r之间有多少个间隔
+                # +1是说l和r之间有多少个数字（左闭右闭）
+                total += r - l
+                l += 1
+            else:
+                r -= 1
+        return total
+```
+
 #### 260. Single Number III
 ```
 class Solution:
@@ -6297,6 +6615,28 @@ class Solution:
         if isBadVersion(start):
             return start
         return end
+```
+
+#### 280. Wiggle Sort
+```
+class Solution:
+    def wiggleSort(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: void Do not return anything, modify nums in-place instead.
+        """
+        if len(nums) <= 1:
+            return
+        # 根据题目要求
+        # 当i为奇数时，nums[i] >= nums[i - 1]
+        # 当i为偶数时，nums[i] <= nums[i - 1]
+        # 类似贪心的思路，时间复杂度O(n)
+        n = len(nums)
+        for i in range(1, n):
+            print(nums)
+            if (i % 2 == 0 and nums[i] > nums[i - 1]) or \
+                (i % 2 == 1 and nums[i] < nums[i - 1]):
+                nums[i], nums[i - 1] = nums[i - 1], nums[i]
 ```
 
 #### 281. Zigzag Iterator
@@ -7224,6 +7564,31 @@ class Solution:
         return max_len
 ```
 
+#### 326. Power of Three
+```
+class Solution:
+    def isPowerOfThree(self, n):
+        """
+        :type n: int
+        :rtype: bool
+        这道题是是要判断n是不是3的某次方
+        """
+        # 不停的除3即可
+        # 因为如果n是3个某次方
+        # 不停的除以3相当于消除了3
+        # 最后的结果肯定是1
+        # 5 % 3 = 2, 2 // 3 = 0
+        while n and n % 3 == 0:
+            n //= 3
+        
+        return n == 1
+    
+        # 如果不用循环，还有一种取巧的方式
+        # 在int32中3最大的阶乘是3 ** 19=1162261467
+        # 所以这道题直接看1162261467能不能被n整除即可
+        # return n > 0 and 1162261467 % n == 0
+```
+
 #### 329. Longest Increasing Path in a Matrix, Hard, Facebook
 ```
 from collections import deque
@@ -7845,6 +8210,54 @@ class Solution:
         return res
 ```
 
+#### 377. Combination Sum IV
+```
+# DP AC
+class Solution:
+    def combinationSum4(self, nums, target):
+        """
+        :type nums: List[int]
+        :type target: int
+        :rtype: int
+        """
+        # dp[i]定义：凑成i这个数字可以有多少种凑法
+        dp = [0] * (target + 1)
+        dp[0] = 1
+        for i in range(1, target + 1):
+            for num in nums:
+                if i >= num:
+                    # 当前想要凑成i，则直接使用i - num的凑法就好了
+                    # 当前的数字是num
+                    dp[i] += dp[i - num]
+        
+        return dp[-1]
+        
+# DFS (TLE)
+# class Solution:
+#     def combinationSum4(self, nums, target):
+#         """
+#         :type nums: List[int]
+#         :type target: int
+#         :rtype: int
+#         """
+#         res = []
+#         self._dfs(nums, target, 0, [], res)
+#         return len(res)
+    
+#     def _dfs(self, nums, target, start, curr, res):
+#         if target == 0:
+#             res.append(curr[:])
+#             return
+        
+#         if target < 0:
+#             return
+        
+#         for i in range(len(nums)):
+#             curr.append(nums[i])
+#             self._dfs(nums, target - nums[i], i, curr, res)
+#             curr.pop()
+```
+
 #### 378. Kth Smallest Element in a Sorted Matrix
 ```
 from bisect import bisect_right
@@ -8077,6 +8490,33 @@ class Solution:
 # obj = Solution(nums)
 # param_1 = obj.reset()
 # param_2 = obj.shuffle()
+```
+
+#### 386. Lexicographical Numbers
+```
+class Solution:
+    def lexicalOrder(self, n):
+        """
+        :type n: int
+        :rtype: List[int]
+        给一个整数n，把区间[1,n]的所有数字按照字典顺序来排列
+        """
+        # 类似先序遍历，先将当前遍历的数字加入结果
+        # 再进行处理
+        # 对每一个数字，我们有两种处理的选择：
+        # 1是优先将数字乘以10
+        # 2是如果数字末尾<9，考虑将数字加1
+        res = []
+        self._dfs(n, 1, res)
+        return res
+    
+    def _dfs(self, n, curr, res):
+        res.append(curr)
+        if curr * 10 <= n:
+            self._dfs(n, curr * 10, res)
+        # curr % 10就是当前curr的末尾的数字
+        if curr < n and curr % 10 < 9:
+            self._dfs(n, curr + 1, res)
 ```
 
 #### 387. First Unique Character in a String
@@ -8404,6 +8844,40 @@ class Solution:
         return len(stones_hash[stones[-1]]) > 0
 ```
 
+#### 408. Valid Word Abbreviation
+```
+class Solution:
+    def validWordAbbreviation(self, word, abbr):
+        """
+        :type word: str
+        :type abbr: str
+        :rtype: bool
+        """
+        iw = ia = 0
+        w, a = len(word), len(abbr)
+        
+        while iw < w and ia < a:
+            if abbr[ia].isdigit():
+                # 这里的abbr[ia]应该是数字子串的开头
+                # 所以不能是0
+                if abbr[ia] == '0':
+                    return False
+                num = 0
+                while ia < a and abbr[ia].isdigit():
+                    num = 10 * num + int(abbr[ia])
+                    ia += 1
+                iw += num
+            else:
+                if word[iw] != abbr[ia]:
+                    return False
+                iw += 1
+                ia += 1
+        
+        # 到最后如果匹配，iw和ia应该相等
+        # 表示两个字符串都全部匹配上了
+        return iw == w and ia == a
+```
+
 #### 412. Fizz Buzz
 ```
 class Solution:
@@ -8423,6 +8897,11 @@ class Solution:
             else:
                 res.append(str(i))
         return res
+```
+
+#### 413. Arithmetic Slices
+```
+
 ```
 
 #### 415. Add Strings
@@ -8828,6 +9307,44 @@ class AllOne:
 # obj.dec(key)
 # param_3 = obj.getMaxKey()
 # param_4 = obj.getMinKey()
+```
+
+#### 435. Non-overlapping Intervals
+```
+# Definition for an interval.
+# class Interval:
+#     def __init__(self, s=0, e=0):
+#         self.start = s
+#         self.end = e
+
+class Solution:
+    def eraseOverlapIntervals(self, intervals):
+        """
+        :type intervals: List[Interval]
+        :rtype: int
+        问最少移除多少个区间，能使的剩下的区间non-overlapping
+        """
+        n = len(intervals)
+        ins = [[interval.start, interval.end] for interval in intervals]
+        ins.sort()
+        res = 0
+        last = 0
+        
+        for i in range(1, n):
+            start, end = ins[i]
+            last_start, last_end = ins[last]
+            if start < last_end:
+                # 此时要移除一个了
+                # 实际上并没有移除，但是将last的位置变成当前end最大的那个i
+                # 为了保证我们总体去掉的区间数最小，我们去掉那个end值较大的区间
+                # end值较大的区间意味着可能会overlapping后面的区间
+                res += 1
+                if end < last_end:
+                    last = i
+            else:
+                last = i
+        
+        return res
 ```
 
 #### 437. Path Sum III
@@ -9256,6 +9773,28 @@ class Solution:
             return 'IPv6'
 ```
 
+#### 477. Total Hamming Distance
+```
+class Solution:
+    def totalHammingDistance(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        汉明距离就是两个整数有多少个bits是不一样的
+        """
+        # 其实就是0的个数乘以1的个数
+        # 只要统计出32位上每一位的1的个数即可
+        n = len(nums)
+        res = 0
+        for i in range(32):
+            num_ones = 0
+            for num in nums:
+                if num & (1 << i) != 0:
+                    num_ones += 1
+            res += num_ones * (n - num_ones)
+        return res
+```
+
 #### 489. Robot Room Cleaner, Hard, Facebook
 ```
 # """
@@ -9530,6 +10069,59 @@ class Solution:
                 d = 1 - d
         
         return res
+```
+
+#### 505. The Maze II
+```
+from collections import deque
+
+class Solution:
+    def shortestDistance(self, maze, start, destination):
+        """
+        :type maze: List[List[int]]
+        :type start: List[int]
+        :type destination: List[int]
+        :rtype: int
+        """
+        m, n = len(maze), len(maze[0])
+        dists = [[2 ** 31 - 1] * n for _ in range(m)]
+        dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        queue = deque()
+        queue.append([start[0], start[1]])
+        dists[start[0]][start[1]] = 0
+        
+        while queue:
+            curr = queue.popleft()
+            for di, dj in dirs:
+                # 四个方向
+                # 每个方向都是一种选择
+                # 所以要把i j重置为curr！！！！
+                # 如果把下面两行放到for的外层去
+                # 在每次循环里面都会沿用上次的i j以及dist
+                i, j = curr
+                dist = dists[curr[0]][curr[1]]
+                while 0 <= i < m and 0 <= j < n and maze[i][j] == 0: 
+                    i += di
+                    j += dj
+                    dist += 1
+                # 根据while里的条件
+                # 当滚出while时候是滚过头了一步
+                # 要减掉
+                i -= di
+                j -= dj
+                dist -= 1
+                # 实际上每个点有可能多次入队的
+                # 点i j可以通过不同距离的路径到达
+                # 如果当前到达i j是更短的距离
+                # 就可以重新更新一下
+                # 感觉可以优化？？
+                if dists[i][j] > dist:
+                    dists[i][j] = dist
+                    if i != destination[0] or j != destination[1]:
+                        queue.append([i, j])
+
+        res = dists[destination[0]][destination[1]]
+        return res if res != 2 ** 31 -1 else -1
 ```
 
 #### 518. Coin Change 2
@@ -10552,7 +11144,6 @@ class Solution:
         # 此时说明s整体就是palindrome
         return True
     
-    
     def _is_valid(self, s, left, right):
         while left < right:
             if s[left] != s[right]:
@@ -10560,6 +11151,44 @@ class Solution:
             left += 1
             right -= 1
         return True
+```
+
+#### 681. Next Closest Time
+```
+class Solution:
+    def nextClosestTime(self, time):
+        """
+        :type time: str
+        :rtype: str
+        """
+        # 模拟时钟
+        # 一分一分钟增加，直到所有的时间数字都在allowed这个set里
+        curr = 60 * int(time[:2]) + int(time[3:])
+        allowed = {int(x) for x in time if x != ':'}
+        
+        while True:
+            # 当前的时间可能加过头了
+            # 所以要mod一下每天的分钟总数
+            # divmod返回两个值：
+            # divmod(8, 3) == 2, 2
+            curr = (curr + 1) % (24 * 60)
+            if all(digit in allowed
+                   # 重点：
+                   # 注意python这里one-liner多重循环
+                   # 顺序是反着的，要注意是从左到右判断是否变量存在
+                   # 正常逻辑是：
+                   # for digit in divmod(block, 10))
+                   # for block in divmod(curr, 60):
+                   # 但是由于这里的'block'第一次使用时候还没有定义
+                   # 所以会报错
+                   # 这里需要将这两句反过来
+                   # 跟one-liner if-else不太一样
+                   # res[0] if res else -1
+                   # 会先去检查if的条件满不满足再去取res[0]
+                   # 所以不会出现越界问题
+                   for block in divmod(curr, 60)
+                   for digit in divmod(block, 10)):
+                return '{:02d}:{:02d}'.format(*divmod(curr, 60))
 ```
 
 #### 688. Knight Probability in Chessboard
@@ -10995,6 +11624,88 @@ class MyHashMap:
 # obj.remove(key)
 ```
 
+#### 708. Insert into a Cyclic Sorted List
+```
+"""
+# Definition for a Node.
+class Node:
+    def __init__(self, val, next):
+        self.val = val
+        self.next = next
+"""
+class Solution:
+    def insert(self, head, insertVal):
+        """
+        :type head: Node
+        :type insertVal: int
+        :rtype: Node
+        """
+        if not head:
+            new_head = Node(insertVal, None)
+            new_head.next = new_head
+            return new_head
+        
+        pre, curr = head, head.next
+        while curr is not head:
+            if pre.val <= insertVal <= curr.val:
+                break
+            # 这种情况是因为起始head不一定是这个list中的最小值！！！
+            # 比如例子中的3 -> 4 -> 1 -> 2 -> 3
+            # 3是头, 要插入5
+            # 当pre为4， curr为1时break
+            if pre.val > curr.val and (pre.val <= insertVal or curr.val >= insertVal):
+                break
+            pre = curr
+            curr = curr.next
+        
+        pre.next = Node(insertVal, curr)
+        return head
+```
+
+#### 713. Subarray Product Less Than K
+```
+class Solution:
+    def numSubarrayProductLessThanK(self, nums, k):
+        """
+        :type nums: List[int]
+        :type k: int
+        :rtype: int
+        """
+        # 题目要求小于k的乘积
+        # 则如果k小于等于1肯定是没有乘积为0的
+        if k <= 1:
+            return 0
+        
+        res = 0
+        prod = 1
+        l = r = 0
+        while r < len(nums):
+            prod *= nums[r]
+            while prod >= k:
+                prod //= nums[l]
+                l += 1
+            # 核心：为什么此时结果可以直接加上r - l + 1?
+            # 考虑此时实际上市加上的所有l和r之间以r为结尾的子数组
+            # 则此时只能移动l
+            res += r - l + 1
+            r += 1
+
+        return res
+        
+        # Naive暴力解法 TLE
+#         res = 0
+#         for i in range(len(nums)):
+#             temp = 1
+#             for j in range(i, len(nums)):
+#                 temp *= nums[j]
+#                 if temp < k:
+#                     res += 1
+#                 else:
+#                     break
+        
+#         return res
+```
+
 #### 716. Max Stack
 ```
 class MaxStack:
@@ -11174,6 +11885,48 @@ class Solution:
 #         return res
 ```
 
+#### 722. Remove Comments
+```
+class Solution:
+    def removeComments(self, source):
+        """
+        :type source: List[str]
+        :rtype: List[str]
+        """
+        in_block = False
+        res = []
+        for line in source:
+            i = 0
+            if not in_block:
+                # 只有当前不在block中
+                # 才新建一个newline
+                # 否则沿用老的
+                newline = []
+            while i < len(line):
+                # 表示一个块级block开始
+                if line[i:i + 2] == '/*' and not in_block:
+                    in_block = True
+                    i += 2
+                # 表示一个块级block结束
+                # 此时为何不需要break？
+                # 因为/**/形式的注释可能出现在行中
+                # 比如`int a; /*this is a demo*/ int b;`
+                elif line[i:i + 2] == '*/' and in_block:
+                    in_block = False
+                    i += 2
+                # 表示一个行级注释开始
+                # 后面的肯定不用考虑
+                elif not in_block and line[i:i + 2] == '//':
+                    break
+                else:
+                    if not in_block:
+                        newline.append(line[i])
+                    i += 1
+            if newline and not in_block:
+                res.append(''.join(newline))
+        return res
+```
+
 #### 730. Count Different Palindromic Subsequences, Hard, Linkedin
 ```
 class Solution:
@@ -11213,6 +11966,51 @@ class Solution:
                 dp[i][j] = dp[i][j] % M
         
         return dp[0][-1]
+```
+
+#### 733. Flood Fill
+```
+from collections import deque
+
+class Solution:
+    def floodFill(self, image, sr, sc, new_color):
+        """
+        :type image: List[List[int]]
+        :type sr: int
+        :type sc: int
+        :type newColor: int
+        :rtype: List[List[int]]
+        """
+        if not image or not image[0]:
+            return image
+        
+        m, n = len(image), len(image[0])
+        if not 0 <= sr < m or not 0 <= sc < n:
+            return image
+        
+        old_color = image[sr][sc]
+        queue = deque()
+        queue.append((sr, sc))
+        
+        dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        
+        while queue:
+            ci, cj = queue.popleft()
+            image[ci][cj] = new_color
+            for di, dj in dirs:
+                newi, newj = ci + di, cj + dj
+                # 这里别忘了如果新点不是就颜色（old_color）
+                # 或者已经是新颜色（new_color）时候，都不需要入队
+                # 尤其是后者，如果已经是新颜色还入队的话
+                # 会使得死循环(反复将这个点入队只因为它不是旧颜色)
+                if not 0 <= newi < m or not 0 <= newj < n or \
+                    image[newi][newj] != old_color or \
+                    image[newi][newj] == new_color:
+                    continue
+                queue.append((newi, newj))
+                image[newi][newj] = new_color
+        
+        return image
 ```
 
 #### 767. Reorganize String
@@ -11382,42 +12180,41 @@ class Solution:
         return ''.join(res)
 ```
 
-#### 708. Insert into a Cyclic Sorted List
+#### 792. Number of Matching Subsequences
 ```
-"""
-# Definition for a Node.
-class Node:
-    def __init__(self, val, next):
-        self.val = val
-        self.next = next
-"""
 class Solution:
-    def insert(self, head, insertVal):
+    def numMatchingSubseq(self, S, words):
         """
-        :type head: Node
-        :type insertVal: int
-        :rtype: Node
+        :type S: str
+        :type words: List[str]
+        :rtype: int
         """
-        if not head:
-            new_head = Node(insertVal, None)
-            new_head.next = new_head
-            return new_head
+        # 核心思路：将words里的词的iterator加入一个map
+        # 遍历一次S,每次遍历到的ch对应的iterator往后移动
+        # 如果某个iterator全部跑完了，res加1
+        res = 0
+        heads = [[] for _ in range(26)]
+        for word in words:
+            it = iter(word)
+            # 先用掉一个it里的开头words!!!
+            # 并且指向次一个ch的iterator加入list
+            heads[ord(next(it)) - ord('a')].append(it)
         
-        pre, curr = head, head.next
-        while curr is not head:
-            if pre.val <= insertVal <= curr.val:
-                break
-            # 这种情况是因为起始head不一定是这个list中的最小值！！！
-            # 比如例子中的3 -> 4 -> 1 -> 2 -> 3
-            # 3是头, 要插入5
-            # 当pre为4， curr为1时break
-            if pre.val > curr.val and (pre.val <= insertVal or curr.val >= insertVal):
-                break
-            pre = curr
-            curr = curr.next
+        for ch in S:
+            inx = ord(ch) - ord('a')
+            prev = heads[inx]
+            heads[inx] = []
+            while prev:
+                it = prev.pop()
+                curr_ch = next(it, None)
+                if curr_ch:
+                    heads[ord(curr_ch) - ord('a')].append(it)
+                else:
+                    # 此时说明iterator里已经全部都找到了
+                    # curr_ch为None了
+                    res += 1
         
-        pre.next = Node(insertVal, curr)
-        return head
+        return res
 ```
 
 #### 824. Goat Latin
