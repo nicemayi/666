@@ -6633,7 +6633,6 @@ class Solution:
         # 类似贪心的思路，时间复杂度O(n)
         n = len(nums)
         for i in range(1, n):
-            print(nums)
             if (i % 2 == 0 and nums[i] > nums[i - 1]) or \
                 (i % 2 == 1 and nums[i] < nums[i - 1]):
                 nums[i], nums[i - 1] = nums[i - 1], nums[i]
