@@ -2360,6 +2360,78 @@ class Solution:
         return res
 ```
 
+#### 85. Maximal Rectangle
+```
+class Solution:
+    def maximalRectangle(self, matrix):
+        """
+        :type matrix: List[List[str]]
+        :rtype: int
+        """
+        # 一行一行的生成直方图
+        # 然后在每次的循环中调用直方图里的方法
+        if not matrix or not matrix[0]:
+            return 0
+        
+        m, n = len(matrix), len(matrix[0])
+        res = 0
+        height = [0] * n
+        for i in range(m):
+            for j in range(n):
+                height[j] = 0 if matrix[i][j] == '0' else 1 + height[j]
+            res = max(res, self._helper(height))
+        
+        return res
+    
+    # 84题最大直方图
+    def _helper(self, height):
+        # 这里用的是一个单调递增栈
+        stack = [-1]
+        height.append(0)
+        res = 0
+        for i in range(len(height)):
+            while height[i] < height[stack[-1]]:
+                h = height[stack.pop()]
+                w = i - stack[-1] - 1
+                res = max(res, h * w)
+            stack.append(i)
+        height.pop()
+        return res
+```
+
+#### 87. Scramble String
+```
+class Solution:
+    def isScramble(self, s1, s2):
+        """
+        :type s1: str
+        :type s2: str
+        :rtype: bool
+        """
+        if s1 == s2:
+            return True
+        
+        if len(s1) != len(s2):
+            return False
+        
+        n = len(s1)
+        counts = [0] * 26
+        for i in range(n):
+            counts[ord(s1[i]) - ord('a')] += 1
+            counts[ord(s2[i]) - ord('a')] -= 1
+        for each_count in counts:
+            if each_count != 0:
+                return False
+        
+        for i in range(1, n):
+            if self.isScramble(s1[:i], s2[:i]) and self.isScramble(s1[i:], s2[i:]):
+                return True
+            if self.isScramble(s1[:i], s2[n - i:]) and self.isScramble(s1[i:], s2[:n - i]):
+                return True
+        
+        return False
+```
+
 #### 88. Merge Sorted Array
 ```
 class Solution:
@@ -2524,6 +2596,44 @@ class Solution:
             curr = top.right
         
         return res
+```
+
+#### 97. Interleaving String
+```
+class Solution:
+    def isInterleave(self, s1, s2, s3):
+        """
+        :type s1: str
+        :type s2: str
+        :type s3: str
+        :rtype: bool
+        这道题是问s3是不是s1和s2保持序列的循序交织在一起的字符串
+        """
+        # dp[i][j]定义：
+        # s1的前i个字符和s2的前j个字符能否组成s3的前i+j个字符
+        # 递推公式：
+        # dp[i][j] = (dp[i - 1][j] and s1[i - 1] == s3[i - 1 + j]) or (dp[i][j - 1] and s2[j - 1] == s3[j - 1 + i])
+        
+        len_s1 = len(s1)
+        len_s2 = len(s2)
+        len_s3 = len(s3)
+        if len_s1 + len_s2 != len_s3:
+            return False
+        
+        dp = [[False] * (len_s2 + 1) for _ in range(len_s1 + 1)]
+        dp[0][0] = True
+        
+        for i in range(1, len_s1 + 1):
+            dp[i][0] = dp[i - 1][0] and s1[i - 1] == s3[i - 1]
+        
+        for i in range(1, len_s2 + 1):
+            dp[0][i] = dp[0][i - 1] and s2[i - 1] == s3[i - 1]
+
+        for i in range(1, len_s1 + 1):
+            for j in range(1, len_s2 + 1):
+                dp[i][j] = (dp[i - 1][j] and s1[i - 1] == s3[i + j - 1]) or (dp[i][j - 1] and s2[j - 1] == s3[i + j - 1])
+        
+        return dp[-1][-1]
 ```
 
 #### 98. Validate Binary Search Tree
@@ -3606,6 +3716,40 @@ class Solution:
             return new_node
 ```
 
+#### 135. Candy
+```
+class Solution:
+    def candy(self, ratings):
+        """
+        :type ratings: List[int]
+        :rtype: int
+        这道题是说
+        每个小朋友都至少有一个糖果
+        分数高的小朋友要保证比分数低的小朋友糖果多
+        问最少需要多少糖果
+        """
+        # 初始化每个人一个糖果，然后需要遍历两遍
+        # 第一遍从左向右遍历，如果右边的小盆友的等级高，等加一个糖果，这样保证了一个方向上高等级的糖果多。
+        # 然后再从右向左遍历一遍，如果相邻两个左边的等级高，而左边的糖果又少的话，则左边糖果数为右边糖果数加一。
+        # 最后再把所有小盆友的糖果数都加起来返回即可。
+        n = len(ratings)
+        res = 0
+        nums = [1] * n
+
+        for i in range(n - 1):
+            if ratings[i] < ratings[i + 1]:
+                nums[i + 1] = nums[i] + 1
+        
+        for i in range(n - 1, 0, -1):
+            if ratings[i] < ratings[i - 1]:
+                # 反过来遍历时
+                # 如果左边的rating高，而左边的糖果一定最少是右边的糖果再加1
+                # 下面的max相当于确定了左边的最小值
+                nums[i - 1] = max(nums[i - 1], nums[i] + 1)
+        
+        return sum(nums)
+```
+
 #### 136. Single Number
 ```
 class Solution:
@@ -4645,6 +4789,45 @@ class Solution:
                 res.add(s[i:i + 10])
         
         return list(res)
+```
+
+#### 188. Best Time to Buy and Sell Stock IV
+```
+class Solution:
+    def maxProfit(self, k, prices):
+        """
+        :type k: int
+        :type prices: List[int]
+        :rtype: int
+        一次交易是指一次完整的买入和卖出
+        """
+        # 虽然说k次完整交易
+        # 我们可以把k次拆成2 * k次动作
+        # 问题的实质是从长度为n的prices数组中挑选出至多2 * k个元素
+        # 组成一个交易（买卖）序列。
+        # 交易序列中的首次交易为买入，其后卖出和买入操作交替进行
+        # (因为题目限制了手里最多只能持有一只股票，必须先卖出才能买入)。
+        # 总收益为交易序列中的偶数项之和 - 奇数项之和。
+        n = len(prices)
+        if k > n // 2:
+            return self._quick_solve(prices)
+        
+        # dp[j]表示完成j次交易时的最大收益
+        # dp[j] = max(dp[j], dp[j - 1] + prices[i] * [1, -1][j % 2])
+        dp = [-2 ** 31] * (2 * k + 1)
+        dp[0] = 0
+        for i in range(n):
+            for j in range(min(2 * k, i + 1), 0, -1):
+                dp[j] = max(dp[j], dp[j - 1] + prices[i] * [1, -1][j % 2])
+        
+        return max(dp)
+    
+    def _quick_solve(self, prices):
+        res = 0
+        for i in range(len(prices) - 1):
+            if prices[i + 1] > prices[i]:
+                res += prices[i + 1] - prices[i]
+        return res
 ```
 
 #### 189. Rotate Array
@@ -7392,6 +7575,34 @@ class Solution:
         return nums
 ```
 
+#### 316. Remove Duplicate Letters
+```
+class Solution:
+    def removeDuplicateLetters(self, s):
+        """
+        :type s: str
+        :rtype: str
+        """
+        m = [0] * 256
+        visited = [False] * 256
+        res = [0]
+        
+        for ch in s:
+            m[ord(ch)] += 1
+        
+        for ch in s:
+            m[ord(ch)] -= 1
+            if visited[ord(ch)]:
+                continue
+            while ord(ch) < res[-1] and m[res[-1]] > 0:
+                visited[res[-1]] = False
+                res.pop()
+            visited[ord(ch)] = True
+            res.append(ord(ch))
+        
+        return ''.join(chr(i) for i in res[1:])
+```
+
 #### 317. Shortest Distance from All Buildings, Hard, Facebook
 ```
 from collections import deque
@@ -8003,6 +8214,63 @@ class Solution:
         return res
 ```
 
+#### 358. Rearrange String k Distance Apart
+```
+from collections import defaultdict
+from heapq import heappush
+from heapq import heappop
+
+class Solution:
+    def rearrangeString(self, s, k):
+        """
+        :type s: str
+        :type k: int
+        :rtype: str
+        """
+        # 说明此时s中所有的字符只需要相隔0个位置
+        # 相当于不需要重置，直接返回即可
+        if k == 0:
+            return s
+        
+        mapping = defaultdict(int)
+        for ch in s:
+            mapping[ch] += 1
+        
+        hp = []
+        for ch, count in mapping.items():
+            # 这里需要一个最大堆，python只有最小堆
+            heappush(hp, (-count, ch))
+        
+        n = len(s)
+        res = []
+        while hp:
+            # 在每个while循环里
+            # 都往res里添加k个字符
+            # 添加的顺序就是优先取从当前剩余的最多字符
+            temp = []
+            cnt = min(k, n)
+            for _ in range(cnt):
+                if not hp:
+                    return ''
+                # 核心！！！
+                # 注意此时在for循环里只是不停的将当前最多的字符pop出来
+                # 这样就保证了在for循环中一定会添加k个不重复的字符
+                # 用temp变量先存着这个pop出来并用过的(count, ch)
+                # 在退出for循环后在push到堆里
+                count, ch = heappop(hp)
+                count *= -1
+                res.append(ch)
+                count -= 1
+                # 如果用光了，就没有必要再push到堆中了
+                if count > 0:
+                    temp.append((-count, ch))
+                n -= 1
+            for each in temp:
+                heappush(hp, each)
+        
+        return ''.join(res)
+```
+
 #### 360. Sort Transformed Array
 ```
 class Solution:
@@ -8537,6 +8805,40 @@ class Solution:
                 return i
         
         return -1
+```
+
+#### 391. Perfect Rectangle
+```
+from collections import defaultdict
+
+class Solution:
+    def isRectangleCover(self, rectangles):
+        """
+        :type rectangles: List[List[int]]
+        :rtype: bool
+        """
+        left = min(x[0] for x in rectangles)
+        bottom = min(x[1] for x in rectangles)                
+        right = max(x[2] for x in rectangles)
+        top = max(x[3] for x in rectangles)
+
+        points = defaultdict(int)
+        for l, b, r, t in rectangles:
+            a, b, c, d = (l, b), (r, b), (r, t), (l, t)
+            for p, q in zip((a, b, c, d), (1, 2, 4, 8)):
+                if points[p] == q:
+                    return False
+                points[p] |= q
+        
+        for px, py in points:
+            # px和py不能是边界点
+            # 便捷点可以为1， 2， 3， 4
+            # 剩下的点一定在3, 6, 9, 12, 15中如果他们能组成完美矩形的话
+            if left < px < right or bottom < py < top:
+                if points[(px, py)] not in (3, 6, 9, 12, 15):
+                    return False
+        
+        return True
 ```
 
 #### 392. Is Subsequence
@@ -9693,6 +9995,174 @@ class Solution:
         return res
 ```
 
+#### 460. LFU Cache
+# 这道题不是太懂，抄的leetcode discussion解答
+```
+from collections import defaultdict
+
+class Node:
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+        self.prev = self.nxt = None 
+
+class DoubleLinkedList:
+    def __init__(self):
+        self.head_sentinel = Node(None, None)
+        self.tail_sentinel = Node(None, None)
+        self.count = 0
+        self.head_sentinel.nxt = self.tail_sentinel
+        self.tail_sentinel.prev = self.head_sentinel
+        self.count = 0
+    
+    def insert(self, x, node):
+        temp = x.nxt
+        x.nxt, node.prev = node, x
+        node.nxt, temp.prev = temp, node
+        self.count += 1
+
+    def appendleft(self, node):
+        self.insert(self.head_sentinel, node)
+
+    def append(self, node):
+        self.insert(self.get_tail(), node)
+
+    def remove(self, node):
+        prev_node = node.prev
+        prev_node.nxt, node.nxt.prev = node.nxt, prev_node
+        self.count -= 1
+
+    def pop():
+        self.remove(self.get_tail())
+
+    def popleft():
+        self.remove(self.get_head())
+
+    def size(self):
+        return self.count
+
+    def get_head(self):
+        return self.head_sentinel.nxt if self.count > 0 else None
+    
+    def get_tail(self):
+        return self.tail_sentinel.prev if self.count > 0 else None        
+
+class LinkedHashSet:
+    def __init__(self):
+        self.node_map, self.dll = {}, DoubleLinkedList()
+
+    def size(self):
+        return len(self.node_map)
+        
+    def contains(self, key):
+        return key in self.node_map
+    
+    def search(self, key):
+        return self.node_map[key].value
+
+    def appendleft(self, key, value):
+        if self.contains(key) == False:
+            node = Node(key, value)
+            self.dll.appendleft(node)
+            self.node_map[key] = node
+        else:
+            self.node_map[key].value = value
+            self.moveleft(key)
+
+    def append(self, key, value):
+        if self.contains(key) == False:
+            node = Node(key, value)
+            self.dll.append(node)
+            self.node_map[key] = node
+        else:
+            self.node_map[key].value = value
+            self.moveright(key)
+    
+    def moveleft(self, key):
+        node = self.node_map[key]
+        self.dll.remove(node)
+        self.dll.appendleft(node)
+
+    def moveright(self, key):
+        node = self.node_map[key]
+        self.dll.remove(node)
+        self.dll.append(node)
+
+    def remove(self, key):
+        node = self.node_map[key]
+        self.dll.remove(node)
+        self.node_map.pop(key)
+    
+    def popleft(self):
+        key = self.dll.get_head().key
+        self.remove(key)
+        return key
+
+    def pop(self):
+        key = self.dll.get_tail().key
+        self.remove(key)
+        return key
+
+class LFUCache:
+    def __init__(self, capacity):
+        """
+        :type capacity: int
+        """
+        self.cap = capacity
+        self.min_f = -1
+        # key:(value, frequency)
+        self.cache = {}
+        # frequency:LinkedHashSet
+        self.freq_map = defaultdict(LinkedHashSet)
+
+    def get(self, key):
+        """
+        :type key: int
+        :rtype: int
+        """
+        if key in self.cache:
+            # Update new frequency
+            # Update freq_map
+            # Move key to front in its linkedHashSet
+            # Update new minimum frequency
+            v, f = self.cache[key][0], self.cache[key][1]
+            self.cache[key][1] += 1
+            
+            f_count_zero = False
+            self.freq_map[f].remove(key)
+            if self.freq_map[f].size() == 0:
+                f_count_zero = True
+                self.freq_map.pop(f)
+            self.freq_map[f+1].appendleft(key, v)
+                
+            if f == self.min_f and f_count_zero == True:
+                self.min_f += 1  
+            return v
+        return -1
+
+    def put(self, key, value):
+        """
+        :type key: int
+        :type value: int
+        :rtype: void
+        """
+        if self.cap == 0:
+            return
+        if key in self.cache:
+            self.cache[key][0] = value
+            self.get(key)
+        else:
+            curr_size = len(self.cache)
+            if curr_size == self.cap:
+                min_list = self.freq_map[self.min_f]
+                x = min_list.pop()
+                self.cache.pop(x)
+            
+            self.cache[key] = [value, 1]
+            self.freq_map[1].appendleft(key, value)
+            self.min_f = 1
+```
+
 #### 463. Island Perimeter
 ```
 class Solution:
@@ -10319,6 +10789,43 @@ class Solution:
         return False
 ```
 
+#### 552. Student Attendance Record II
+```
+class Solution:
+    def checkRecord(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        if n == 0:
+            return 1
+        if n == 1:
+            return 3
+        
+        # 我们先考虑不含'A'的情况
+        # num[i + 1]表示前n中前i个字符在不包含'A'的时候能凑成多少种答案
+        # 则此时只有如下3中结尾的方案：
+        # 1. 以'P'结尾，这个结尾长度为1，所以我们要回溯到nums[i]
+        # 2. 以'PL'结尾，这个结尾长度为2，所以我们要回溯到nums[i - 1]
+        # 3. 以'PLL'结尾，这个结尾长度为3，所以我们要回溯到nums[i - 2]
+        nums = [1, 1, 2]
+        for i in range(2, n):
+            nums.append((nums[i] + nums[i - 1] + nums[i - 2]) % 1000000007)
+        
+        # 先求一遍此时的答案
+        res = (nums[n] + nums[n - 1] + nums[n - 2]) % 1000000007
+        
+        # 然后insert 'A'到答案中，假设insert的位置就是i
+        # 此时左边表示n中i个字符有多少种答案
+        # 右边表示n中n - i - 1个字符有多少种答案
+        # 注意总长度还是i + (n - i - 1) + 1 = n的
+        for i in range(n):
+            res += nums[i + 1] * nums[n - i] % 1000000007
+            res %= 1000000007
+        
+        return res
+```
+
 #### 554. Brick Wall
 ```
 from collections import defaultdict
@@ -10416,6 +10923,55 @@ class Solution:
             res += mapping[total - target]
     
         return res
+```
+
+#### 564. Find the Closest Palindrome
+```
+class Solution:
+    def nearestPalindromic(self, n):
+        """
+        :type n: str
+        :rtype: str
+        """
+        # 核心：备选答案里有5中情况
+        # 将左半部分的翻转放入备选中
+        n_len = len(n)
+        n_num = int(n)
+        
+        candidates = set()
+        # 比如n是一个3位数字string
+        # 先将1001和99加入备选
+        candidates.add(10 ** n_len + 1)
+        candidates.add(10 ** (n_len - 1) - 1)
+        
+        # 比如数字是123，prefix为12
+        # 数字是1234，prefix为12
+        pre_fix = int(n[:(n_len + 1) // 2])
+        
+        for i in (-1, 0, 1):
+            pre = str(pre_fix + i)
+            if n_len % 2 == 0:
+                new_str = pre + pre[::-1]
+            else:
+                new_str = pre + pre[-2::-1]
+            candidates.add(int(new_str))
+
+        if n_num in candidates:
+            candidates.remove(n_num)
+
+        res = min_diff = 2 ** 31 - 1
+        for each in candidates:
+            diff = abs(each - n_num)
+            if diff < min_diff:
+                res = each
+                min_diff = diff
+            # 这里是找较小的数字
+            # 比如88，99和77都是一样的diff
+            # 但是答案要返回77因为77较小
+            elif diff == min_diff:
+                res = min(res, each)
+        
+        return str(res)
 ```
 
 #### 567. Permutation in String
@@ -11190,6 +11746,66 @@ class Solution:
                 return '{:02d}:{:02d}'.format(*divmod(curr, 60))
 ```
 
+#### 685. Redundant Connection II
+```
+class Solution:
+    def findRedundantDirectedConnection(self, edges):
+        """
+        :type edges: List[List[int]]
+        :rtype: List[int]
+        """
+        n = len(edges)
+        parents = [0] * (n + 1)
+        candidate1 = []
+        candidate2 = []
+        
+        # step 1: 检查是否存在某个点有两个parents
+        for i in range(n):
+            start, end = edges[i]
+            # 说明end这个点不在parents中
+            if parents[end] == 0:
+                parents[end] = start
+            else:
+                candidate1 = [parents[end], end]
+                candidate2 = [start, end]
+                # 仅仅是为了标记当前edge的end点
+                edges[i][1] = 0
+        
+        # step 2: union find
+        for i in range(1, n + 1):
+            parents[i] = i
+        
+        for start, end in edges:
+            # 这个点是标记过的，在union find中我们是去找是否存在环
+            # 不考虑这个点
+            if end == 0:
+                continue
+            start_parent = self._find_root(parents, start)
+            # 此时说明找到了环，则答案必然跟环有关
+            if start_parent == end:
+                # 初始candidate1为空list[]
+                # 如果此时仍旧为空list
+                # 说明在step 1并没有更新过candidate1
+                # 即说明step 1中没有找到具有两个parents的node
+                # 此时直接返回造成环的当前edge [start, end]即可
+                if not candidate1:
+                    return [start, end]
+                # 此时说明既有环，又有两个parents的node
+                # 直接返回candidate2即可
+                return candidate1
+            # 执行union操作
+            parents[end] = start_parent
+        
+        # 说明在第二步里没有找到环
+        # 直接返回candidagte2
+        return candidate2
+    
+    def _find_root(self, parents, point):
+        if parents[point] != point:
+            parents[point] = self._find_root(parents, parents[point])
+        return parents[point]
+```
+
 #### 688. Knight Probability in Chessboard
 ```
 class Solution:
@@ -11803,7 +12419,6 @@ class Solution:
             ])
         return merged_accounts
     
-    
     def initialize(self, number_of_total_accounts):
         self.father = {}
         for i in range(number_of_total_accounts):
@@ -11934,7 +12549,6 @@ class Solution:
         :type S: str
         :rtype: int
         """
-        
         ## http://www.cnblogs.com/grandyang/p/7942040.html
         
         n = len(S)
@@ -12010,6 +12624,38 @@ class Solution:
                 image[newi][newj] = new_color
         
         return image
+```
+
+#### 745. Prefix and Suffix Search
+```
+class WordFilter:
+
+    def __init__(self, words):
+        """
+        :type words: List[str]
+        返回具有前缀 prefix 和后缀suffix 的词的最大权重。
+        如果没有这样的词，返回 -1。
+        """
+        self._map = {}
+        for inx, word in enumerate(words):
+            for i in range(len(word) + 1):
+                prefix = word[:i]
+                for j in range(len(word) + 1):
+                    suffix = word[j:]
+                    self._map[prefix + '#' + suffix] = inx
+
+    def f(self, prefix, suffix):
+        """
+        :type prefix: str
+        :type suffix: str
+        :rtype: int
+        """
+        return self._map.get(prefix + '#' + suffix, -1)
+
+
+# Your WordFilter object will be instantiated and called as such:
+# obj = WordFilter(words)
+# param_1 = obj.f(prefix,suffix)
 ```
 
 #### 767. Reorganize String
@@ -12214,6 +12860,123 @@ class Solution:
                     res += 1
         
         return res
+```
+
+#### 803. Bricks Falling When Hit
+```
+class Solution:
+
+    _DIRECTIONS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    
+    def hitBricks(self, grid, hits):
+        """
+        :type grid: List[List[int]]
+        :type hits: List[List[int]]
+        :rtype: List[int]
+        注意条件：最顶层的1（第0行里的1）是不会掉下来的
+        """
+        # 核心：先hit打掉，再标记剩余不会掉的砖块为2
+        res = [0] * len(hits)
+        if not grid or not grid[0]:
+            return []
+        m, n = len(grid), len(grid[0])
+
+        # 注意grid里只有0和1两种情况
+        # 所以进行过下面的操作
+        # 是不会新的砖块的（为1）
+        # 只是将原有的砖块（为1的点）打掉（变成0）
+        # 或者标记原来的empty点（值是0的点）为-1
+        for i, j in hits:
+            grid[i][j] -= 1
+        
+        # 先将第一行里所有现存的砖块以及和它们相连的砖块给标记成2
+        for i in range(n):
+            self._dfs(0, i, grid)
+        
+        for k in range(len(hits) - 1, -1, -1):
+            i, j = hits[k]
+            # 因为上面有对hits里的每一步-1的操作
+            # 这里相当于还原
+            grid[i][j] += 1
+            # 如果还原之后等于1
+            # 说明这个地方是通过hits打下来的砖块
+            # 换句话说是每次hit的起始点
+            # 如果原来就是0的点
+            # 经过初始-1的操作，变成-1
+            # 即使经过这步的+1，只会变成0
+            # 不会对下面的判断造成影响
+
+            # 核心：
+            # 这步里是说此时这个砖块是衔接四周为1和顶部的纽带
+            # 所以在它的周围所有为1的砖块都会掉下来
+            if grid[i][j] == 1 and self._is_connected(i, j, grid):
+                res[k] = self._dfs(i, j, grid) - 1
+        
+        return res
+    
+    # dfs里是将和i j相连的砖块用2连接了起来
+    # 并返回一共连接了多少个砖块
+    def _dfs(self, i, j, grid):
+        m, n = len(grid), len(grid[0])
+        if not 0 <= i < m or not 0 <= j < n or grid[i][j] != 1:
+            return 0
+        
+        # 这里标记2，既表示这个点被访问过了，又表示这个点被连接过了
+        grid[i][j] = 2
+        res = 1
+        for di, dj in self._DIRECTIONS:
+            newi, newj = i + di, j + dj
+            res += self._dfs(newi, newj, grid)
+        
+        return res
+    
+    # 判断i j点是否和其他值为2的点连接过
+    def _is_connected(self, i, j, grid):
+        if i == 0:
+            return True
+
+        m, n = len(grid), len(grid[0])
+        for di, dj in self._DIRECTIONS:
+            newi, newj = i + di, j + dj
+            if 0 <= newi < m and 0 <= newj < n and grid[newi][newj] == 2:
+                return True
+        
+        return False
+```
+
+#### 805. Split Array With Same Average
+```
+class Solution:
+    def splitArraySameAverage(self, A):
+        """
+        :type A: List[int]
+        :rtype: bool
+        这道题限制了A中元素非负
+        这个条件很重要
+        """
+        # dp定义：
+        # 从A中拿出一些元素
+        # 键值表示这些元素的sum和
+        # dp的value表示这些元素的个数
+        # 初始状态0的sum和不需要任何元素，因此value也为0
+        dp = {0: 0}
+        len_A, total_A = len(A), sum(A)
+        
+        for a in A:
+            # sub_sum一定要从大到小遍历
+            # 因为这道题有个限定A一定是非负元素
+            # 而且当前要更新的的状态sub_sum + a
+            # 是依赖于之前遍历过的状态sub_sum的
+            for sub_sum in sorted(dp.keys(), reverse=True):
+                # 当前遍历a时候
+                # 凑成sub_sum + a的值肯定是凑成dp[sub_sum]的元素个数再加1
+                dp[sub_sum + a] = dp[sub_sum] + 1
+                counts = dp[sub_sum + a]
+                if counts > 0 and len_A - counts > 0 and \
+                    (sub_sum + a) * (len_A - counts) == (total_A - sub_sum - a) * counts:
+                    return True
+        
+        return False
 ```
 
 #### 824. Goat Latin
@@ -12520,6 +13283,99 @@ class Solution:
                 desc = False
         
         return asc or desc
+```
+
+#### 913. Cat and Mouse
+```
+from collections import defaultdict
+from collections import deque
+
+class Solution:
+    def catMouseGame(self, graph):
+        """
+        :type graph: List[List[int]]
+        :rtype: int
+        """        
+        DRAW_GAME, MOUSE_WIN, CAT_WIN = 0, 1, 2
+        MOUSE_TURN, CAT_TURN = 1, 2
+        HOLE_POS, MOUSE_START_POS, CAT_START_POS = 0, 1, 2
+        
+        def parents(m_curr_pos, c_curr_pos, curr_turn):
+            # 如果这一次的turn是猫
+            # 则上一次一定是老鼠的turn
+            if curr_turn == CAT_TURN:
+                for m_prev_pos in graph[m_curr_pos]:
+                    yield m_prev_pos, c_curr_pos, MOUSE_TURN
+            else:
+                for c_prev_pos in graph[c_curr_pos]:
+                    # 猫不能到达hole(0点)
+                    # 换句话说猫也不能从hold点到curr pos
+                    if c_prev_pos != HOLE_POS:
+                        yield m_curr_pos, c_prev_pos, CAT_TURN
+        
+        n = len(graph)
+        # outgoings表示能够到达这个key的状态的种类数量
+        outgoings = {}
+        for m in range(n):
+            for c in range(n):
+                outgoings[m, c, MOUSE_TURN] = len(graph[m])
+                outgoings[m, c, CAT_TURN] = len(graph[c])
+                if HOLE_POS in graph[c]:
+                    outgoings[m, c, CAT_TURN] -= 1
+
+        # 核心：定义状态为(鼠的位置，猫的位置，谁动)
+        # 并将这个状态的结果染色为
+        # DRAW_GAME | MOUSE_WIN | CAT_WIN
+        color = defaultdict(int)
+        queue = deque()
+        # 初始化queue
+        # 将肯定已知胜负的点先入队
+        # 并将这个确定的状态
+        for curr_pos in range(n):
+            for whose_turn in (MOUSE_TURN, CAT_TURN):
+                color[HOLE_POS, curr_pos, MOUSE_TURN] = MOUSE_WIN
+                # 队列为四元组
+                # (鼠的位置，猫的位置，谁动，谁动谁能赢)
+                queue.append((HOLE_POS, curr_pos, whose_turn, MOUSE_WIN))
+                if curr_pos != HOLE_POS:
+                    color[curr_pos, curr_pos, whose_turn] = CAT_WIN
+                    queue.append((curr_pos, curr_pos, whose_turn, CAT_WIN))
+        
+        # 倒着反推的BFS
+        while queue:
+            m_curr_pos, c_curr_pos, curr_turn, res = queue.popleft()
+            for m_prev_pos, c_prev_pos, prev_turn in parents(
+                m_curr_pos,
+                c_curr_pos,
+                curr_turn,
+            ):
+                if (m_prev_pos, c_prev_pos, prev_turn) not in color:
+                    # 注意这里是因为在开头设置了
+                    # MOUSE_WIN, CAT_WIN = 1, 2
+                    # MOUSE_TURN, CAT_TURN = 1, 2
+                    # 让猫鼠的move标识和他们输赢标志一致了
+                    # 还是有疑惑？？
+                    if prev_turn == res:
+                        color[m_prev_pos, c_prev_pos, prev_turn] = res
+                        queue.append((
+                            m_prev_pos,
+                            c_prev_pos,
+                            prev_turn,
+                            res,
+                        ))
+                    else:
+                        outgoings[m_prev_pos, c_prev_pos, prev_turn] -= 1
+                        if outgoings[m_prev_pos, c_prev_pos, prev_turn] == 0:
+                            color[m_prev_pos, c_prev_pos, prev_turn] = \
+                                MOUSE_TURN if prev_turn == CAT_TURN else CAT_TURN
+                            queue.append((
+                                m_prev_pos,
+                                c_prev_pos,
+                                prev_turn,
+                                MOUSE_TURN if prev_turn == CAT_TURN else CAT_TURN,
+                            ))
+        
+        return color[MOUSE_START_POS, CAT_START_POS, MOUSE_TURN]
 ```
 
 #### 921. Minimum Add to Make Parentheses Valid
