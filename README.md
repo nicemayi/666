@@ -1408,6 +1408,35 @@ class Solution:
         return dp[n][m]
 ```
 
+#### 45. Jump Game II
+```
+class Solution:
+    def jump(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        这道题是问最少几步能跳到最后
+        贪心法
+        """
+        steps = 0
+        n = len(nums)
+        i = curr = 0
+        # curr表示当前能跳到的最远距离
+        while curr < n - 1:
+            steps += 1
+            # 因为在下面的循环里要更新curr
+            # 所以预先保存下pre
+            pre = curr
+            while i <= pre:
+                # 注意：这道题保证了i一定是nums中valid index
+                curr = max(curr, i + nums[i])
+                i += 1
+            if pre == curr:
+                return -1
+        
+        return steps
+```
+
 #### 46. Permutations
 ```
 class Solution:
@@ -3184,6 +3213,38 @@ class Solution:
                 root.right = root.left
                 root.left = None
             root = root.right
+```
+
+#### 115. Distinct Subsequences
+```
+class Solution:
+    def numDistinct(self, s, t):
+        """
+        :type s: str
+        :type t: str
+        :rtype: int
+        """
+        # 典型dp题
+        ns, nt = len(s), len(t)
+        dp = [[0] * (ns + 1) for _ in range(nt + 1)]
+        for i in range(ns + 1):
+            # 当t为空串时候
+            # 则不管s是什么答案都是1
+            # 因为空串是任意字符串的一个子序列
+            dp[0][i] = 1
+        for i in range(1, nt + 1):
+            # 当s为空串的时候
+            # 除了第一个位置，剩下的答案都是0
+            # 因为任何非空字符串都不可能是空串的子序列
+            dp[i][0] = 0
+        
+        for i in range(1, nt + 1):
+            for j in range(1, ns + 1):
+                dp[i][j] = dp[i][j - 1]
+                if t[i - 1] == s[j - 1]:
+                    dp[i][j] += dp[i - 1][j - 1]
+        
+        return dp[-1][-1]
 ```
 
 #### 116. Populating Next Right Pointers in Each Node
@@ -7412,8 +7473,10 @@ class BinaryIndexTree:
             self.setter(inx + 1, val)
     
     def _lowbit(self, x):
+        # 核心：非常重要！！！
+        # lowbit函数计算的是2 ** k的值
         return x & -x
-    
+
     def setter(self, inx, new_val):
         diff = new_val - self._nums[inx]
         self._nums[inx] = new_val
@@ -7460,6 +7523,82 @@ class NumArray:
 # param_2 = obj.sumRange(i,j)
 ```
 
+#### 308. Range Sum Query 2D - Mutable
+```
+class BinaryIndexTree:
+    def __init__(self, matrix):
+        if not matrix or not matrix[0]:
+            return
+        m, n = len(matrix), len(matrix[0])
+        self._mat = [[0] * (n + 1) for _ in range(m + 1)]
+        self._presum = [[0] * (n + 1) for _ in range(m + 1)]
+        for i in range(m):
+            for j in range(n):
+                self.setter(i + 1, j + 1, matrix[i][j])
+    
+    def _lowbit(self, x):
+        return x & -x
+    
+    def setter(self, i, j, new_val):
+        diff = new_val - self._mat[i][j]
+        self._mat[i][j] = new_val
+        mm, nn = len(self._mat), len(self._mat[0])
+        ci = i
+        while ci < mm:
+            cj = j
+            while cj < nn:
+                self._presum[ci][cj] += diff
+                cj += self._lowbit(cj)
+            ci += self._lowbit(ci)
+    
+    def getter(self, i, j):
+        res = 0
+        ci = i
+        while ci > 0:
+            cj = j
+            while cj > 0:
+                res += self._presum[ci][cj]
+                cj -= self._lowbit(cj)
+            ci -= self._lowbit(ci)
+        return res
+
+class NumMatrix:
+
+    def __init__(self, matrix):
+        """
+        :type matrix: List[List[int]]
+        """
+        self.bit = BinaryIndexTree(matrix)
+
+    def update(self, row, col, val):
+        """
+        :type row: int
+        :type col: int
+        :type val: int
+        :rtype: void
+        """
+        self.bit.setter(row + 1, col + 1, val)
+
+    def sumRegion(self, row1, col1, row2, col2):
+        """
+        :type row1: int
+        :type col1: int
+        :type row2: int
+        :type col2: int
+        :rtype: int
+        """
+        return self.bit.getter(row2 + 1, col2 + 1) - \
+            self.bit.getter(row2 + 1, col1) - \
+            self.bit.getter(row1, col2 + 1) +
+            self.bit.getter(row1, col1)
+
+
+# Your NumMatrix object will be instantiated and called as such:
+# obj = NumMatrix(matrix)
+# obj.update(row,col,val)
+# param_2 = obj.sumRegion(row1,col1,row2,col2)
+```
+
 #### 311. Sparse Matrix Multiplication
 ```
 class Solution:
@@ -7488,6 +7627,42 @@ class Solution:
                     mat[i][k] += A[i][j] * B[j][k]
         
         return mat
+```
+
+#### 312. Burst Balloons
+```
+class Solution:
+    def maxCoins(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        n = len(nums)
+        nums = [1] + nums + [1]
+        # dp[i][j]定义：
+        # nums中i到j气球全部打爆能有多少分数
+        dp = [[0] * (n + 2) for _ in range(n + 2)]
+        
+        # i遍历的意义是当前剩下几个气球
+        for i in range(1, n + 1):
+            # left是从下标1开始的一直到n - i + 1
+            for left in range(1, n - i + 2):
+                right = left + i - 1
+                for k in range(left, right + 1):
+                    dp[left][right] = max(
+                        dp[left][right],
+                        # 判断left到right之间所气球都打爆能有多少分数
+                        # 实际上到最后最剩下一个气球k
+                        # 我们遍历这个k
+                        # 最终结果应该分三部分：
+                        # 1. 最后这个气球k和left的left以及right的right的乘积
+                        # 2. left到k-1之间气球全部打爆的分数
+                        # 3. k+1到right之间全部气球打爆的分数
+                        nums[left - 1] * nums[k] * nums[right + 1] + \
+                            dp[left][k - 1] + dp[k + 1][right]
+                    )
+
+        return dp[1][n]
 ```
 
 #### 314. Binary Tree Vertical Order Traversal
@@ -8212,6 +8387,52 @@ class Solution:
                 j += 1
         
         return res
+```
+
+#### 354. Russian Doll Envelopes
+```
+class Solution:
+    def maxEnvelopes(self, envelopes):
+        """
+        :type envelopes: List[List[int]]
+        :rtype: int
+        """
+        envelopes_copy = [(i[0], -i[1]) for i in envelopes]
+        envelopes_copy.sort()
+        n = len(envelopes_copy)
+        # dp定义是在最终排好序的信封中，高度h从小到大的排序
+        # 所以dp的长度就是最终的答案
+        dp = []
+        for i in range(n):
+            l, r = 0, len(dp)
+            t = -envelopes_copy[i][1]
+            while l < r:
+                mid = l + (r - l) // 2
+                # 这里的高度h是从大到小排列的
+                # 核心：要找到最后一个大于等于t的坐标right
+                if dp[mid] >= t:
+                    r = mid
+                else:
+                    l = mid + 1
+            if r >= len(dp):
+                dp.append(t)
+            else:
+                dp[r] = t
+        return len(dp)
+
+        # python TLE
+#         if not envelopes:
+#             return 0
+
+#         envelopes.sort()
+#         n = len(envelopes)
+#         dp = [1] * n
+#         for i in range(n):
+#             for j in range(i):
+#                 if envelopes[i][0] > envelopes[j][0] and envelopes[i][1] > envelopes[j][1]:
+#                     dp[i] = max(dp[i], dp[j] + 1)
+        
+#         return max(dp)
 ```
 
 #### 358. Rearrange String k Distance Apart
@@ -9145,6 +9366,51 @@ class Solution:
         return len(stones_hash[stones[-1]]) > 0
 ```
 
+#### 407. Trapping Rain Water II
+```
+from heapq import heappush
+from heapq import heappop
+
+class Solution:
+    def trapRainWater(self, heightMap):
+        """
+        :type heightMap: List[List[int]]
+        :rtype: int
+        """
+        # 这道题是BFS，但是是使用优先队列而不是简单的队列
+        if not heightMap or not heightMap[0]:
+            return 0
+
+        m, n = len(heightMap), len(heightMap[0])
+        min_heap = []
+        visited = [[False] * n for _ in range(m)]
+        for i in range(m):
+            for j in range(n):
+                if i in {0, m - 1} or j in {0, n - 1}:
+                    heappush(min_heap, (heightMap[i][j], i, j))
+                    visited[i][j] = True
+
+        DIRS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        res = 0
+        while min_heap:
+            curr_sea_level, ci, cj = heappop(min_heap)
+            for di, dj in DIRS:
+                newi, newj = ci + di, cj + dj
+                if not 0 <= newi < m or not 0 <= newj < n or \
+                    visited[newi][newj]:
+                    continue
+                if curr_sea_level - heightMap[newi][newj] > 0:
+                    res += curr_sea_level - heightMap[newi][newj]
+                    # 核心：这里我们选择当前最小的高度作为当前newi和newj的海平面
+                    # 而不是简单的直接把heightMap[newi][newj]作为当前的海平面
+                    heappush(min_heap, (curr_sea_level, newi, newj))
+                else:
+                    heappush(min_heap, (heightMap[newi][newj], newi, newj))
+                visited[newi][newj] = True
+        
+        return res
+```
+
 #### 408. Valid Word Abbreviation
 ```
 class Solution:
@@ -9177,6 +9443,51 @@ class Solution:
         # 到最后如果匹配，iw和ia应该相等
         # 表示两个字符串都全部匹配上了
         return iw == w and ia == a
+```
+
+#### 410. Split Array Largest Sum
+```
+class Solution:
+    def splitArray(self, nums, m):
+        """
+        :type nums: List[int]
+        :type m: int
+        :rtype: int
+        """
+        # 很巧妙的二分思想
+        l = r = 0
+        for num in nums:
+            l = max(l, num)
+            r += num
+        
+        # l就是数组中的最大值
+        # r是数组的和
+        # 这道题二分的范围就是nums中子数组之和的范围
+        while l < r:
+            mid = l + (r - l) // 2
+            # 核心：如果不能拆成了大于m个分组，说明我们的子数组的和mid太大了
+            if self._can_split_no_more_than_m(nums, m, mid):
+                r = mid
+            else:
+                l = mid + 1
+        
+        return l
+    
+    def _can_split_no_more_than_m(self, nums, m, sub_total):
+        cnt = 1
+        curr_sum = 0
+        for num in nums:
+            curr_sum += num
+            if curr_sum > sub_total:
+                # 说明此时已经找到一个最大（和不超过sub_total）的分组
+                # 要重置了
+                curr_sum = num
+                cnt += 1
+                # 如果curr_sum很快速的凑成了m个不大于sub_total的子数组
+                # 说明我们的sub_total太小了
+                if cnt > m:
+                    return False
+        return True
 ```
 
 #### 412. Fizz Buzz
@@ -9940,6 +10251,58 @@ class Solution:
         return res
 ```
 
+#### 465. Optimal Account Balancing
+```
+from collections import defaultdict
+
+class Solution:
+    def minTransfers(self, transactions):
+        """
+        :type transactions: List[List[int]]
+        :rtype: int
+        要求的是最少的transaction次数
+        """
+        # 实际上这个mapping并没大用
+        # 就是为了求有多少个不平衡的账户acconts而已
+        mapping = defaultdict(int)
+        for acc1, acc2, money in transactions:
+            mapping[acc1] -= money
+            mapping[acc2] += money
+            
+        accounts = []
+        # cnt统计的是accounts现在有多少个不平衡的账户
+        for acc, money in mapping.items():
+            if money != 0:
+                accounts.append(money)
+        
+        return self._dfs(accounts, 0, 0)
+    
+    def _dfs(self, accounts, start, old_steps):
+        new_steps = 2 ** 31 - 1
+        
+        # 先找第一个不平衡的账户的位置
+        # 注意第一次进入这个递归函数的时候，start肯定是0
+        # 但是后面由于在for循环中更新了account的元素就不一定了
+        # 所以我们这里需要再求一下
+        while start < len(accounts) and accounts[start] == 0:
+            start += 1
+        
+        # 核心递归：遍历所有account里start以后的不平衡情况
+        # 查看用某个账户来平衡start能否最终能使的steps变小
+        for i in range(start + 1, len(accounts)):
+            # 此时异号，说明双方可以来平衡
+            # 很好理解：两个账户都是正的或者都是负的没有意义
+            # 从这个角度来讲这是贪心的思路
+            if accounts[start] * accounts[i] < 0:
+                accounts[i] += accounts[start]
+                new_steps = min(new_steps, self._dfs(accounts, start + 1, old_steps + 1))
+                # 一定记得要回溯！！！
+                # 我们在这里是在尝试不同的情况
+                accounts[i] -= accounts[start]
+        
+        return new_steps if new_steps != 2 ** 31 - 1 else old_steps
+```
+
 #### 516. Longest Palindromic Subsequence
 ```
 class Solution:
@@ -10420,8 +10783,13 @@ class Solution:
         :type nums: List[int]
         :rtype: int
         """
+        # 这道题也可以用树状数组来解
+        # 假设nums里的数字是有上限的
+        # 则用一个数组（或者哈希表）c，数字的下标就是nums里的值
+        # 而c[nums[i]]的含义就是有多少个小于nums[i]的个数
+        # 由于不需要考虑num[i]的值具体是多少
+        # 可以将num[i]归一化，这样就肯定能用一个固定大小的数组来解了
         return self._merge_sort(nums, 0, len(nums) - 1)
-    
     
     def _merge_sort(self, nums, left, right):
         if left >= right:
@@ -10644,6 +11012,48 @@ class Solution:
                     return True
         
         return False
+```
+
+#### 527. Word Abbreviation
+```
+class Solution:
+    def wordsAbbreviation(self, words):
+        """
+        :type words: List[str]
+        :rtype: List[str]
+        """
+        n = len(words)
+        res = list(map(self._abbrev, words))
+        prefix = [0] * n
+        
+        for i in range(n):
+            while True:
+                dup = set()
+                for j in range(i + 1, n):
+                    if res[i] == res[j]:
+                        dup.add(j)
+                
+                if not dup:
+                    break
+                
+                # 注意一定要将i也添加，此时不光是j不能沿用之前的prefix了
+                # i也不能用
+                dup.add(i)
+                for k in dup:
+                    prefix[k] += 1
+                    res[k] = self._abbrev(words[k], prefix[k])
+        
+        return res
+    
+    # abbrev函数定义：
+    # 保留前i个字符，从第i+1到最后执行缩写操作
+    def _abbrev(self, word, i=0):
+        if len(word) - i <= 3:
+            return word
+        # 下面的索引实际上应该是len(word) - (i + 1) - 1
+        # 因为i是从0开始的，所以这里应该加1
+        # 整合一下就是如下的写法
+        return word[:i + 1] + str(len(word) - i - 2) + word[-1]
 ```
 
 #### 528. Random Pick with Weight
@@ -11489,6 +11899,47 @@ class Solution(object):
         return res
 ```
 
+#### 668. Kth Smallest Number in Multiplication Table
+```
+class Solution:
+    def findKthNumber(self, m, n, k):
+        """
+        :type m: int
+        :type n: int
+        :type k: int
+        :rtype: int
+        """
+        if k > m * n or k <= 0:
+            return -1
+        
+        l, r = 1, m * n
+        while l < r:
+            mid = l + (r - l) // 2
+            cnt = 0
+            # 基本思路：求出矩阵中小于mid的元素的个数
+            for i in range(1, m + 1):
+                if mid > n * i:
+                    cnt += n
+                else:
+                    # 核心之一：由于每一行都是当前行号i乘以从1开始的自然序列：
+                    # i * [1, 2, 3, 4, 5...]
+                    # 所以用mid // i就相当于对mid归一化
+                    # 就是这个序列中有多少个小于mid的数字
+                    # 直接加到cnt中即可
+                    cnt += mid // i
+            # 核心之二：说明此时第k小的数字肯定在另一个半区
+            # 可以直接抛弃所有当前左半区的内容
+            if cnt < k:
+                l = mid + 1
+            # 核心之三：此时cnt >= k，由于这个等号的存在
+            # 我们并不确定当前的mid是不是答案
+            # 所以更新的r要包括当前的mid
+            else:
+                r = mid
+        # 此时return l和return r都是一样的
+        return l
+```
+
 #### 670. Maximum Swap
 ```
 class Solution:
@@ -11678,6 +12129,49 @@ class Solution:
             if right < 0:
                 return False
         return True
+```
+
+#### 679. 24 Game
+```
+class Solution:
+    def judgePoint24(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: bool
+        # 注意：这道题是可以包括小数的
+        """
+        return self._dfs(nums)
+    
+    def _dfs(self, nums):
+        if not nums:
+            return False
+        if len(nums) == 1:
+            return abs(nums[0] - 24) <= 1e-9
+        
+        for i in range(len(nums)):
+            for j in range(len(nums)):
+                if i == j:
+                    continue
+                left_inx, right_inx = min(i, j), max(i, j)
+                sub_nums = nums[:right_inx] + nums[right_inx + 1:]
+                # 这里其实是在合并num[i]和nums[j]
+                # 生成的sub_nums实际上就是不包含right_inx的新数组
+                # 注意此时这个新数组实际上市包括原来left_inx的
+                # 所以要在下面的循环里将i和j各种操作的结果（注意i和j实际上就是left_inx和right_inx）
+                # 覆盖掉left_inx的值
+                # 看到最后merge以后能不能凑成24
+                for each_res in self._calculate(nums[i], nums[j]):
+                    sub_nums[left_inx] = each_res
+                    if self._dfs(sub_nums):
+                        return True
+        
+        return False
+     
+    def _calculate(self, a, b):
+        res = [a + b, a - b, a * b]
+        if b > 1e-9:
+            res.append(1.0 * a /b)
+        return res
 ```
 
 #### 680. Valid Palindrome II
@@ -12581,6 +13075,45 @@ class Solution:
         return dp[0][-1]
 ```
 
+#### 727. Minimum Window Subsequence
+```
+class Solution:
+    def minWindow(self, S, T):
+        """
+        :type S: str
+        :type T: str
+        :rtype: str
+        """
+        m, n = len(S), len(T)
+        start = -1
+        min_len = 2 ** 31 - 1
+        # dp[i][j]表示S中前i个字符包含T中前j个字符的话的起始位置(在S中的位置)
+        # 注意返回的子串的起始字母和T的起始字母一定相同，这样才能保证最短
+        dp = [[-1] * (n + 1) for _ in range(m + 1)]
+        for i in range(m + 1):
+            dp[i][0] = i
+        
+        for i in range(1, m + 1):
+            # j是遍历T串的
+            # 所以j的长度一定是小于当前的S串的长度i
+            for j in range(1, min(i, n) + 1):
+                if S[i - 1] == T[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1]
+                else:
+                    dp[i][j] = dp[i - 1][j]
+            # 说明此时找到一个可能的答案
+            # 需要和全局的min_len比较一下
+            if dp[i][n] != -1:
+                # 我们在dp里存的是起始的下标
+                # 所以length就应该是i减去这个下标
+                temp_len = i - dp[i][n]
+                if temp_len < min_len:
+                    min_len = temp_len
+                    start = dp[i][n]
+        
+        return S[start:start + min_len] if start != -1 else ''
+```
+
 #### 733. Flood Fill
 ```
 from collections import deque
@@ -12656,6 +13189,99 @@ class WordFilter:
 # Your WordFilter object will be instantiated and called as such:
 # obj = WordFilter(words)
 # param_1 = obj.f(prefix,suffix)
+```
+
+#### 751. IP to CIDR
+```
+class Solution:
+    def ipToCIDR(self, ip, n):
+        """
+        :type ip: str
+        :type n: int
+        :rtype: List[str]
+        """
+        # 这道题理解题意就比较困难
+        # 是说把这个ip每个int8按照二进制连接起来
+        # 比如 255.0.0.1 -> 11111111 00000000 00000000 0000001
+        # 后面的slash跟着的数字表示去上面的多少个前缀
+        # 比如/29就表示取从左到右29个相同前缀，后面3位自由发挥
+        # 所以255.0.0.1/29就相当于包括了8个不同的ip，而且这就是一个CIDR块
+        # 这道题是问想要通过原始ip表示n个ip，能凑成的最少的CIDR块都是什么
+        # 而且要注意，这个CIDR块里的地址是以原始的ip为起始地址往上增加的
+        # 也就是说我们只能把最后的0变成1，不能把1变成0
+        ips = ip.split('.')
+        x = 0
+        for i in range(len(ips)):
+            x = x * 256 + int(ips[i])
+        
+        res = []
+        while n > 0:
+            # last_1肯定是一个2的n次方的数
+            # 表示x中最后的1的位置
+            last_1 = x & -x
+            while last_1 > n:
+                last_1 >>= 1
+            res.append(self._num_to_ip(x, last_1))
+            x += last_1
+            n -= last_1
+        
+        return res
+    
+    def _num_to_ip(self, x, last_1):
+        res = [0] * 4
+        
+        # res从低到高位先还原出来每个int8原来是多少
+        res[0] = str(x & 255)
+        x >>= 8
+        res[1] = str(x & 255)
+        x >>= 8
+        res[2] = str(x & 255)
+        x >>= 8
+        res[3] = str(x)
+        
+        length = 33
+        while last_1 > 0:
+            length -= 1
+            last_1 >>= 1
+        
+        return '.'.join(res[::-1]) + '/{}'.format(length)
+```
+
+#### 753. Cracking the Safe
+```
+class Solution:
+    def crackSafe(self, n, k):
+        """
+        :type n: int
+        :type k: int
+        :rtype: str
+        """
+        if k < 0:
+            return -1
+        
+        # 密码每位数字就是0-K之间（K是0到9）
+        # 最短的密码也应该有n位
+        res = '0' * n
+        # 注意：这里要写set([res])
+        # 如果写成set(res)就相当于把res这个字符串里的每个字母都加到set里了
+        # 因为res本身就是一个iteralble
+        visited = set([res])
+        
+        # 遍历k的n次方
+        for i in range(pow(k, n)):
+            pre = res[len(res) - n + 1:]
+            for j in range(k - 1, -1, -1):
+                curr = pre + str(j)
+                if curr not in visited:
+                    visited.add(curr)
+                    res += str(j)
+                    # 因为此时res变长了
+                    # 说明我们增加了一种备选方案
+                    # 下次一定是继续要在当前基础上变长的
+                    # 所以要break掉才能在res基础上重新生成新的pre
+                    break
+        
+        return res
 ```
 
 #### 767. Reorganize String
@@ -12742,6 +13368,111 @@ class Solution:
                 num = 0
             i += 1
         return res
+```
+
+#### 773. Sliding Puzzle
+```
+from collections import deque
+
+class Solution:
+    def slidingPuzzle(self, board):
+        """
+        :type board: List[List[int]]
+        :rtype: int
+        """
+        # 标准BFS题目
+        m, n = len(board), len(board[0])
+        target = '123450'
+        # 核心: dirs数组的第i个元素表示它可以跟周围哪些位置交换（一维数组）
+        # 比如0号下标，只能和右边的1下标和下面的3下标交换
+        dirs = [
+            [1, 3],
+            [0, 2, 4],
+            [1, 5],
+            [0, 4],
+            [1, 3, 5],
+            [2, 4],
+        ]
+        
+        # 初始化开始的状态
+        start = ''
+        for i in range(m):
+            for j in range(n):
+                start += str(board[i][j])
+
+        queue = deque()
+        queue.append(start)
+        visited = set()
+
+        res = 0
+        while queue:
+            # 注意这里重点要分层遍历才能更新res！！！！
+            # 所以要for循环而不是单纯的每次popleft
+            q_len = len(queue)
+            for _ in range(q_len - 1, -1, -1):
+                curr = queue.popleft()
+                if curr == target:
+                    return res
+                zero_inx = curr.find('0')
+                for next_pos in dirs[zero_inx]:
+                    # python里面string是immutable
+                    # 这里只好先转成list处理
+                    curr_list = list(curr)
+                    curr_list[next_pos], curr_list[zero_inx] = curr_list[zero_inx], curr_list[next_pos]
+                    new_str = ''.join(curr_list)
+                    if new_str in visited:
+                        continue
+                    queue.append(new_str)
+                    visited.add(new_str)
+            res += 1
+        
+        # 遍历完了queue都没有找到解答
+        # 说明做不到，只能返回-1
+        return -1
+```
+
+#### 774. Minimize Max Distance to Gas Station
+```
+from math import floor
+
+class Solution:
+    def minmaxGasDist(self, stations, K):
+        """
+        :type stations: List[int]
+        :type K: int
+        :rtype: float
+        """
+        # 这道题正解是二分法
+        # 比较难想
+        # 二分的是**最小的任意两个加油站之间的最大距离**(
+        # 最大距离的最小值，其实就是题目要求解的值)
+        # 好处是这道题给定了上下界
+        # 因为加油站的位置是在0到10 ** 8之间
+        # 所以任意两个加油站之间的距离就在0到10 ** 8之间
+        # 我们需要在这个范围内找到一个最小值，
+        # 以这个最小间隔，在现有的两两加油站之间插入一共K个新油站
+        l, r = 0, 1e8
+        while r - l > 1e-6:
+            mid = l + (r - l) / 2
+            # 说明以现有的mid为interval，在stations
+            # 两两之间插入油站的话做不到插入K个新油站
+            # 此时说明间隔太大了，需要缩小上届
+            if self._helper(stations, K, mid):
+                r = mid
+            else:
+                l = mid
+        
+        return l
+    
+    # 核心重点：helper求的是在两两相邻的加油站之间，
+    # 能够存放下多少个以当前mid为间隔的加油站！！！
+    # 则如果以当前的间隔interval能插入的新加油站数量小于K
+    # 说明间隔太大了；反之则说明间隔太小了
+    def _helper(self, stations, K, interval):
+        cnt = 0
+        for i in range(len(stations) - 1):
+            cnt += floor((stations[i + 1] - stations[i]) / interval)
+        return cnt <= K
 ```
 
 #### 785. Is Graph Bipartite?
@@ -12979,6 +13710,90 @@ class Solution:
         return False
 ```
 
+#### 815. Bus Routes
+```
+from collections import deque
+from collections import defaultdict
+
+class Solution:
+    def numBusesToDestination(self, routes, S, T):
+        """
+        :type routes: List[List[int]]
+        :type S: int
+        :type T: int
+        :rtype: int
+        """
+        # 这道题并不是问最短的routes是什么
+        # 问的是最少需要换乘几次车
+        # 核心思路：广度优先
+        # 确定车站到该车站里的buses的映射
+        # 具体思路跟200 numbers of island是一样的
+        buses_in_stops = defaultdict(set)
+        for bus, stops in enumerate(routes):
+            for stop in stops:
+                buses_in_stops[stop].add(bus)
+                
+        queue = deque()
+        visited = set()
+        queue.append((S, 0))
+        visited.add(S)
+        
+        while queue:
+            curr_stop, curr_steps = queue.popleft()
+            if curr_stop == T:
+                return curr_steps
+            # 核心：这里用了两个循环
+            # 第一层循环遍历从当前车站能联通的车
+            # 第二层循环遍历用该车找到该车能到达的新站点
+            # 如果新站点没有被访问过，加到queue里即可
+            for next_bus in buses_in_stops[curr_stop]:
+                for each_stop in routes[next_bus]:
+                    if each_stop not in visited:
+                        queue.append((each_stop, curr_steps + 1))
+                        visited.add(each_stop)
+        
+        return -1
+```
+
+#### 818. Race Car
+```
+class Solution:
+    def __init__(self):
+        self._dp = {0:0}
+
+    def racecar(self, target):
+        """
+        :type target: int
+        :rtype: int
+        题意：
+        遇到A，position += speed并且speed *= 2
+        遇到R，speed = -1如果当前speed是1；speed = 1如果
+        当前speed已经是-1了
+        给定最终的位置target，问最短的sequence（由A和R组成）能够到达target
+        """
+        dp = [0, 1, 4] + [2 ** 31 - 1] * target
+        for t in range(3, target + 1):
+            k = t.bit_length()
+            if t == 2 ** k - 1:
+                dp[t] = k
+                continue
+            
+            # 情况1：走2 ** (k - 1)的距离
+            # 然后用一个R和m个A去往回走
+            # 这时候已经走了(k - 1) + 1 + (m - 1) + 1 + 2步（即A**(k - 1)RA**(m - 1)R
+            # 然后去dp里找剩余的步数t - 2 ** (k - 1) + 2 ** m
+            for m in range(k - 1):
+                # 注意：后面的k - 1 + j + 2是当前走了这么多步
+                dp[t] = min(dp[t], dp[t - 2 ** (k - 1) + 2 ** m] + k - 1 + m + 2)
+            
+            # 情况2：直接2 ** k步（已经走了最大的k + 1步, 就是在最后min函数括号里加的那一部分，加1是指一个R），然后再往回走
+            # 走了k + 1步距离就是2 ** k - 1，这个距离已经超越了t
+            # 所以还要继续走2 ** k - 1 - t步才能走到t
+            if 2 ** k - 1 - t > 0:
+                dp[t] = min(dp[t], dp[2 ** k - 1 - t] + k + 1)
+        return dp[target]
+```
+
 #### 824. Goat Latin
 ```
 class Solution:
@@ -13036,6 +13851,58 @@ class Solution:
                     assert age_a_counts == age_b_counts
                     res -= age_a_counts
         
+        return res
+```
+
+#### 843. Guess the Word
+```
+# """
+# This is Master's API interface.
+# You should not implement it, or speculate about its implementation
+# """
+#class Master:
+#    def guess(self, word):
+#        """
+#        :type word: str
+#        :rtype int
+#        """
+
+class Solution:
+    def findSecretWord(self, wordlist, master):
+        """
+        :type wordlist: List[Str]
+        :type master: Master
+        :rtype: None
+        """
+        # itertools.permutations(iterable, n)
+        # 是从iterable从取出来n个元素
+        n = 0
+        while n < 6:
+            # count的含义是指将wordlist中的词两两比较
+            # 看有多少个词跟其他的词完全不一样
+            # Counter实例是一个字典，但是支持defaultdict的特性（访问不存在的元素会返回默认值）
+            count = collections.Counter(
+                w1 for w1, w2 in itertools.permutations(wordlist, 2) \
+                    if self._match(w1, w2) == 0
+            )
+            # 基本思路就是从count中取出与wordlist中的某个词与其他词两两不match这种情况出现最多的词
+            # 核心之一：注意这里实际上隐含了一个条件
+            # 我们用min函数，如果当前count为空，count[w]就是0
+            # 所以我们在这种情况下去wordlist里第一个词（其实就相当于随便取）
+            
+            # 核心之二：这道题还有一个很重要的intuition，假设秘密词是S，现在有A词和S词match了n个字符
+            # n < 6 (说明A并不是答案)，现在有一个B词，如果B词是答案，则B和S应该是一样的（B == S）
+            # 所以A也应该与B有n个match
+            # 这就是wordlist的更新式子有由来
+            guess = min(wordlist, key=lambda w: count[w])
+            n = master.guess(guess)
+            wordlist = [w for w in wordlist if self._match(w, guess) == n]
+            
+    def _match(self, w1, w2):
+        res = 0
+        for i in range(len(w1)):
+            if w1[i] == w2[i]:
+                res += 1
         return res
 ```
 
@@ -13098,6 +13965,45 @@ class Solution:
             return start
         
         return end
+```
+
+#### 857. Minimum Cost to Hire K Workers
+```
+from heapq import heappush
+from heapq import heappop
+
+class Solution:
+    def mincostToHireWorkers(self, quality, wage, K):
+        """
+        :type quality: List[int]
+        :type wage: List[int]
+        :type K: int
+        :rtype: float
+        """
+        q_w_ratio = sorted((w / q, q, w) for q, w in zip(quality, wage))
+        
+        max_heap = []
+        sum_q = 0
+        res = float('inf')
+        for ratio, q, w in q_w_ratio:
+            heappush(max_heap, -q)
+            sum_q += q
+            
+            if len(max_heap) > K:
+                # 相当于把最差性价比的给pop掉
+                # 这里实际上相当于减去quality
+                # 但是由于我们push的是-q
+                # 所以是加号
+                sum_q += heappop(max_heap)
+            
+            if len(max_heap) == K:
+                # 核心: 此时的ratio相当于所有K worker的最低ratio
+                # 就是基准
+                # 根据ratio的公式：ratio = w / q
+                # 得出来的就是总的wage
+                res = min(res, ratio * sum_q)
+        
+        return res
 ```
 
 #### 862. Shortest Subarray with Sum at Least K, Hard, Facebook
@@ -13403,6 +14309,65 @@ class Solution:
                         res += 1
         
         return res + len(stack)
+```
+
+#### 936. Stamping The Sequence
+```
+class Solution:
+    def movesToStamp(self, stamp, target):
+        """
+        :type stamp: str
+        :type target: str
+        :rtype: List[int]
+        """
+        # 反向stamp
+        # 假设我们把最终的答案aabccbc作为input
+        # 看怎么打stamp能让最后的结果变成*******
+        # https://leetcode.com/problems/stamping-the-sequence/discuss/189576/C%2B%2B-simple-greedy
+        # 'aabccbc' ? 'abc' = [1]
+        # 'a***cbc' ? '*bc' = []
+        # 'a***cbc' ? 'ab*' = []
+        # 'a***cbc' ? 'a**' = [0]
+        # '****cbc' ? '*b*' = []
+        # '****cbc' ? '**c' = [2]
+        # '*****bc' ? '*bc' = [4]
+        # 最终结果就是[4, 2, 0, 1]
+        res = []
+        total_stamp = 0
+        turn_stamp = -1
+        
+        while turn_stamp != 0:
+            turn_stamp = 0
+            for sz in range(len(stamp), 0, -1):
+                for i in range(len(stamp) - sz + 1):
+                    new_stamp = '*' * i + stamp[i:i + sz] + '*' * (len(stamp) - sz - i)
+                    pos = target.find(new_stamp)
+                    while pos != -1:
+                        res.append(pos)
+                        turn_stamp += sz
+                        target = target[:pos] + '*' * len(stamp) + target[pos + len(stamp):]
+                        pos = target.find(new_stamp)
+            total_stamp += turn_stamp
+        res = res[::-1]
+        return res if total_stamp == len(target) else []
+```
+
+#### 940. Distinct Subsequences II
+```
+class Solution:
+    def distinctSubseqII(self, S):
+        """
+        :type S: str
+        :rtype: int
+        """
+        endswith = [0] * 26
+        # 思路是寻找以某一个字符为结尾的字符
+        # 按照顺序遍历S，这样保证此时遍历的字符ch的意义很明确
+        # 就是以当前字符ch结尾的子序列
+        # 然后用endswith的和（正好此时和就是前一个字符结尾的所有子序列的和）
+        for ch in S:
+            endswith[ord(ch) - ord('a')] = sum(endswith) + 1
+        return sum(endswith) % (10 ** 9 + 7)
 ```
 
 #### 953. Verifying an Alien Dictionary
