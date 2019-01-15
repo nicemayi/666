@@ -7371,6 +7371,82 @@ class Solution:
         return count == 0
 ```
 
+#### 302. Smallest Rectangle Enclosing Black Pixels
+```
+class Solution:
+    def minArea(self, image, x, y):
+        """
+        :type image: List[List[str]]
+        :type x: int
+        :type y: int
+        :rtype: int
+        """
+        if not image or not image[0]:
+            return 0
+        
+        m, n = len(image), len(image[0])
+
+        # 1. 检查上边界
+        start, end = 0, x
+        while start + 1 < end:
+            mid = start + (end - start) // 2
+            # 如果在mid这一行有black pixel
+            # 说明mid到x都是有黑色像素的
+            if self._check_row(mid, image):
+                end = mid
+            # 反之，说明0到mid都是没有黑色像素的
+            else:
+                start = mid
+        top_level = start if self._check_row(start, image) else end
+        
+        # 2. 检查下边界
+        start, end = x, m - 1
+        while start + 1 < end:
+            mid = start + (end - start) // 2
+            if self._check_row(mid, image):
+                start = mid
+            else:
+                end = mid
+        # 核心之一： 为什么这里要先查end？
+        # 因为我们要找包括所有的黑色像素的矩形
+        # 所以必须尽可能扩展范围
+        # 就是说在找bottom边界时候end要优先于start
+        # 同理在找right边界的时候end也要优先于start
+        bottom_level = end if self._check_row(end, image) else start
+        
+        # 3. 检查左边界
+        start, end = 0, y
+        while start + 1 < end:
+            mid = start + (end - start) // 2
+            if self._check_column(mid, image):
+                end = mid
+            else:
+                start = mid
+        left_level = start if self._check_column(start, image) else end
+        
+        # 4. 检查右边界
+        start, end = y, n - 1
+        while start + 1 < end:
+            mid = start + (end - start) // 2
+            if self._check_column(mid, image):
+                start = mid
+            else:
+                end = mid
+        right_level = end if self._check_column(end, image) else start
+        
+        return (right_level - left_level + 1) * (bottom_level - top_level + 1)
+    
+    def _check_row(self, row, image):
+        if any(i == '1' for i in image[row]):
+            return True
+        return False
+    
+    def _check_column(self, col, image):
+        if any(i[col] == '1' for i in image):
+            return True
+        return False
+```
+
 #### 304. Range Sum Query 2D - Immutable
 ```
 class NumMatrix:
