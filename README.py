@@ -10664,6 +10664,33 @@ class Solution:
         return res
 ```
 
+#### 482. License Key Formatting
+```
+class Solution:
+    def licenseKeyFormatting(self, S, K):
+        """
+        :type S: str
+        :type K: int
+        :rtype: str
+        """
+        new_S = ''
+        for ch in S:
+            if ch == '-':
+                continue
+            new_S += ch.upper()
+        
+        res = []
+        i = len(new_S) - 1
+        while i >= K:
+            res.append(new_S[i - K + 1:i + 1])
+            i -= K
+        
+        if i >= 0:
+            res.append(new_S[:i + 1])
+        
+        return '-'.join(res[::-1])
+```
+
 #### 489. Robot Room Cleaner, Hard, Facebook
 ```
 # """
@@ -11505,6 +11532,57 @@ class Solution:
         # 我们是从周一就可以上飞机的
         # 可以从任何可以去的城市开始
         return max(dp[i][0] for i in range(n) if i == 0 or flights[0][i] == 1)
+```
+
+#### 591. Tag Validator
+```
+import re
+
+class Solution:
+    def isValid(self, code):
+        """
+        :type code: str
+        :rtype: bool
+        """
+        tag_stack = []
+        while code:
+            if code.startswith('<![CDATA['):
+                if not tag_stack:
+                    return False
+                next_inx = code.find(']]>')
+                if next_inx == -1:
+                    return False
+                code = code[next_inx + 3:]
+            elif code.startswith('</'):
+                next_inx = code.find('>')
+                if next_inx == -1:
+                    return False
+                tag_name = code[2:next_inx]
+                if not tag_stack or tag_stack.pop() != tag_name:
+                    return False
+                code = code[next_inx + 1:]
+                # 这里实际上是为了一个极端case
+                # "<A></A><B></B>"要求返回False
+                # 感觉应该是返回True的
+                if not tag_stack:
+                    return not code
+            elif code.startswith('<'):
+                next_inx = code.find('>')
+                if next_inx == -1:
+                    return False
+                tag_name = code[1:next_inx]
+                # 正则里[]里表示单个匹配
+                # {}表示前面的长度是1到9
+                if not re.match('^[A-Z]{1,9}$', tag_name):
+                    return False
+                tag_stack.append(tag_name)
+                code = code[next_inx + 1:]
+            elif not tag_stack:
+                return False
+            else:
+                code = code[1:]
+        
+        return not tag_stack
 ```
 
 #### 605. Can Place Flowers
@@ -14418,6 +14496,36 @@ class Solution:
         return asc or desc
 ```
 
+#### 904. Fruit Into Baskets
+```
+from collections import defaultdict
+
+class Solution:
+    def totalFruit(self, tree):
+        """
+        :type tree: List[int]
+        :rtype: int
+        """
+        # 就是说从tree中找到一个子数组
+        # 这个子数组中只包含两种水果
+        # 这道题实际上应该转化成双指针的题
+        # 在tree中找到一个窗口
+        # 这个窗口中只包含两种水果
+        window = defaultdict(int)
+        l = r = 0
+        res = 0
+        while r < len(tree):
+            window[tree[r]] += 1
+            while len(window) > 2:
+                window[tree[l]] -= 1
+                if window[tree[l]] == 0:
+                    del window[tree[l]]
+                l += 1
+            res = max(res, r - l + 1)
+            r += 1
+        return res
+```
+
 #### 913. Cat and Mouse
 ```
 from collections import defaultdict
@@ -14577,6 +14685,23 @@ class Solution:
                         res += 1
         
         return res + len(stack)
+```
+
+#### 929. Unique Email Addresses
+```
+class Solution:
+    def numUniqueEmails(self, emails):
+        """
+        :type emails: List[str]
+        :rtype: int
+        """
+        res = set()
+        for email in emails:
+            local_name, domain_name = email.split('@')
+            local_name = local_name.split('+')[0]
+            local_name = local_name.replace('.', '')
+            res.add(local_name + domain_name)
+        return len(res)
 ```
 
 #### 936. Stamping The Sequence
