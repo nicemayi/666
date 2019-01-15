@@ -10605,6 +10605,43 @@ class Solution:
             return 'IPv6'
 ```
 
+#### 471. Encode String with Shortest Length
+```
+class Solution:
+    def encode(self, s):
+        """
+        :type s: str
+        :rtype: str
+        aaaaa -> 5[a]
+        """
+        n = len(s)
+        # dp[i][j]表示s在[i, j]区间内的最短encode表示
+        dp = [[''] * n for _ in range(n)]
+        for step in range(1, n + 1):
+            for i in range(n - step + 1):
+                j = i + step - 1
+                dp[i][j] = s[i:i + step]
+                for k in range(i, j):
+                    left = dp[i][k]
+                    right = dp[k + 1][j]
+                    if len(left) + len(right) < len(dp[i][j]):
+                        dp[i][j] = left + right
+                temp = s[i:j + 1]
+                replace = ''
+                # find函数： S.find(sub[, start[, end]]) -> int
+                # 应该从1开始找，避免找到0
+                pos = (temp * 2).find(temp, 1)
+                if pos >= len(temp):
+                    replace = temp
+                else:
+                    # 核心之一： str(len(temp) // pos) 就是temp中哟多少个重复的pattern！
+                    replace = str(len(temp) // pos) + '[' + dp[i][i + pos - 1] + ']'
+                if len(replace) < len(dp[i][j]):
+                    dp[i][j] = replace
+        
+        return dp[0][n - 1]
+```
+
 #### 477. Total Hamming Distance
 ```
 class Solution:
@@ -13114,6 +13151,86 @@ class Solution:
         return S[start:start + min_len] if start != -1 else ''
 ```
 
+#### 731. My Calendar II
+```
+class MyCalendarTwo:
+
+    def __init__(self):
+        # 用两个set
+        # s1存的是完整区间的集合
+        # s2存的是重叠区间（即已经有两个event在这个区间里了）
+        # 所以如果新的start, end在这个区域里
+        # 下面的book函数之间返回False
+        self._s1 = set()
+        self._s2 = set()
+
+    def book(self, start, end):
+        """
+        :type start: int
+        :type end: int
+        :rtype: bool
+        """
+        # 两个时间段的重叠区域是两个区间的起始时间中的较大值，到结束时间中的较小值
+        for saved_start, saved_end in self._s2:
+            # 因为这道题给定的start和end一定是valid的
+            # 即start < end
+            if start >= saved_end or end <= saved_start:
+                continue
+            else:
+                # 说明有重叠区域
+                return False
+        for curr_start, curr_end in self._s1:
+            if start >= curr_end or end <= curr_start:
+                continue
+            else:
+                # 说明有重叠区域
+                # 需要将该重叠区域加入到s2中
+                self._s2.add((max(curr_start, start), min(curr_end, end)))
+        self._s1.add((start, end))
+        return True
+
+
+# Your MyCalendarTwo object will be instantiated and called as such:
+# obj = MyCalendarTwo()
+# param_1 = obj.book(start,end)
+```
+
+#### 732. My Calendar III
+```
+from collections import defaultdict
+
+class MyCalendarThree:
+
+    def __init__(self):
+        # 这道题跟II不一样的地方在于
+        # 要求的是在同一时刻在interval start和end之间
+        # 有多少个事件
+        # 换句话说，在当前的间隔内有多少个事件
+        self._freq = defaultdict(int)
+
+    def book(self, start, end):
+        """
+        :type start: int
+        :type end: int
+        :rtype: int
+        """
+        # 好题！仔细体会
+        self._freq[start] += 1
+        self._freq[end] -= 1
+        
+        curr = res = 0
+        # 核心之一：注意freq要根据key排序
+        for time_stamp in sorted(self._freq):
+            curr += self._freq[time_stamp]
+            res = max(res, curr)
+        
+        return res
+
+# Your MyCalendarThree object will be instantiated and called as such:
+# obj = MyCalendarThree()
+# param_1 = obj.book(start,end)
+```
+
 #### 733. Flood Fill
 ```
 from collections import deque
@@ -13281,6 +13398,71 @@ class Solution:
                     # 所以要break掉才能在res基础上重新生成新的pre
                     break
         
+        return res
+```
+
+#### 759. Employee Free Time
+```
+# Definition for an interval.
+# class Interval:
+#     def __init__(self, s=0, e=0):
+#         self.start = s
+#         self.end = e
+
+class Solution:
+    def employeeFreeTime(self, schedule):
+        """
+        :type schedule: List[List[Interval]]
+        :rtype: List[Interval]
+        """
+        schedule_list = []
+        for each_employee in schedule:
+            for each_interval in each_employee:
+                schedule_list.append((each_interval.start, each_interval.end))
+        schedule_list.sort()
+        
+        res = []
+        # 跟merge interval很类似
+        # 遍历sort过后的interval
+        # 预先存下最小的里的prev_end
+        # 然后从第1个开始遍历（0-index）
+        # 如果当前遍历的start是大于之前的prev_end
+        # 说明出现了一个间隔，放入结果中，并更新prev_end为当前的curr_end
+        # 如果当前遍历的start不大于死之前的prev_end
+        # 说明有重叠了
+        # 此时我们只需要更新prev_end为最大的（最右边的）end值即可
+        _, prev_end = schedule_list[0]
+        for curr_start, curr_end in schedule_list[1:]:
+            if prev_end < curr_start:
+                res.append(Interval(prev_end, curr_start))
+                prev_end = curr_end
+            else:
+                prev_end = max(prev_end, curr_end)
+        
+        return res
+```
+
+#### 765. Couples Holding Hands
+```
+class Solution:
+    def minSwapsCouples(self, row):
+        """
+        :type row: List[int]
+        :rtype: int
+        """
+        res = 0
+        n = len(row)
+        for i in range(0, n, 2):
+            # 每次的i和i+1 suppose是一对儿
+            # 小trick：比如2和3应该是一对儿
+            # 则2^1正好是3，而3^1正好是2
+            if row[i + 1] == row[i] ^ 1:
+                continue
+            for j in range(i + 1, n):
+                if row[j] == row[i] ^ 1:
+                    row[j], row[i + 1] = row[i + 1], row[j]
+                    res += 1
+                    break
         return res
 ```
 
@@ -13940,6 +14122,51 @@ class Solution:
         return ''.join(res)
 ```
 
+#### 850. Rectangle Area II
+```
+class Solution:
+    def rectangleArea(self, rectangles):
+        """
+        :type rectangles: List[List[int]]
+        :rtype: int
+        """
+        # 扫描线经典题
+        OPEN, CLOSE = 0, 1
+        events = []
+        for x1, y1, x2, y2 in rectangles:
+            events.append([y1, OPEN, x1, x2])
+            events.append([y2, CLOSE, x1, x2])
+        events.sort()
+        
+        # ative里存的是当前的活动的x区间x2 - x1
+        active = []
+        curr_y = events[0][0]
+        res = 0
+        for y, flag, x1, x2 in events:
+            res += self._query(active) * (y - curr_y)
+            if flag is OPEN:
+                active.append((x1, x2))
+                # 因为python里没有自己带排序的treeset
+                # 所以这里需要手动排序一遍
+                active.sort()
+            else:
+                active.remove((x1, x2))
+            curr_y = y
+        
+        return res % (10 ** 9 + 7)
+    
+    # query函数返回的是当前的active数组里
+    # 在水平方向上的活动的x范围（类似活动的x区间）
+    def _query(self, active):
+        res = 0
+        curr = -2 ** 31
+        for x1, x2 in active:
+            curr = max(curr, x1)
+            res += max(0, x2 - curr)
+            curr = max(curr, x2)
+        return res
+```
+
 #### 852. Peak Index in a Mountain Array
 ```
 class Solution:
@@ -14282,6 +14509,47 @@ class Solution:
                             ))
         
         return color[MOUSE_START_POS, CAT_START_POS, MOUSE_TURN]
+```
+
+#### 920. Number of Music Playlists
+```
+from math import factorial
+
+class Solution:
+    def numMusicPlaylists(self, N, L, K):
+        """
+        :type N: int
+        :type L: int
+        :type K: int
+        :rtype: int
+        有N首不同的曲子，要凑成L长度的playlist(L >= N)
+        要保证N中每首曲子都至少播放一遍
+        而且重复的曲子要相隔K
+        求有多少种L的组成方式
+        """
+        # dp[i][j]表示组成j长度的playlist从i长度的unique songs
+        # 可以有多少种答案
+        dp = [[0] * (L + 1) for _ in range(N + 1)]
+        # 题目说明了0 <= K < N <= L <= 100
+        # 所以行坐标大于K
+        # 至少从K + 1开始(即至少要有K + 1首输入的unique songs)
+        for i in range(K + 1, N + 1):
+            # 播放列表长度长度大于等于N（即j的长度要大于等于i）
+            for j in range(i, L + 1):
+                if i == j:
+                    dp[i][j] = factorial(i)
+                else:
+                    # 第一种情况：
+                    # 相当于在当前的i首unique songs中剔除去1首曲子（变成i - 1）
+                    # 看凑成j - 1长度的list
+                    # 所以一共有dp[i - 1][j - 1] * i
+                    # 乘以i是因为i中任何一首都可以剔除
+                    # 第二种情况：
+                    # 用当前的i首unique songs凑成j - 1长度的play list
+                    # 则j长度的play list中最后一首曲子只能从前i - k首曲子中挑选
+                    dp[i][j] = dp[i - 1][j - 1] * i + dp[i][j - 1] * (i - K)
+        
+        return dp[N][L] % (10 ** 9 + 7)
 ```
 
 #### 921. Minimum Add to Make Parentheses Valid
