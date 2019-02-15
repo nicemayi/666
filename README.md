@@ -1,4 +1,4 @@
-## Leetcode Google (绝大部分medium和easy，全部的hard), Facebook，Linkedin近一年全部的题目
+## Leetcode
 
 #### 1. Two Sum
 ```
@@ -18381,7 +18381,7 @@ class Solution:
         return sum(higher)
 ```
 
-## Lintcode上九章算法解题训练全部的题目
+## Lintcode
 
 ### 1 - Hack the Algorithm Interview
 
