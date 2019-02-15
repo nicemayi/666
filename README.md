@@ -4376,15 +4376,15 @@ from collections import OrderedDict
 
 class LRUCache(object):
 
-    ## 这道题核心就是用python的OrderedDict
-    ## 每一次操作都先pop一遍，再添加一次
-    ## 这样就保证了最后被访问的（包括插入，查询）都会被放到最后一位
-    ## 换句话说第一位就是最久没被访问过的，可以被pop掉
-    ## OrderedDict是按照插入顺序保存的
-    ## 支持的API：
-    ## pop(key)
-    ## popitem() 这里和普通的dict不同，普通的dict的popitem()不支持参数，
-    ## OrderedDict的popitem(last = False)默认last = True,即默认从插入的最后一位pop
+    # 这道题核心就是用python的OrderedDict
+    # 每一次操作都先pop一遍，再添加一次
+    # 这样就保证了最后被访问的（包括插入，查询）都会被放到最后一位
+    # 换句话说第一位就是最久没被访问过的，可以被pop掉
+    # OrderedDict是按照插入顺序保存的
+    # 支持的API：
+    # pop(key)
+    # popitem() 这里和普通的dict不同，普通的dict的popitem()不支持参数，
+    # OrderedDict的popitem(last = False)默认last = True,即默认从插入的最后一位pop
     def __init__(self, capacity):
         """
         :type capacity: int
@@ -11950,10 +11950,10 @@ class Solution:
 ```
 
 #### 460. LFU Cache
+```
 # 这道题不是太懂，抄的leetcode discussion解答
 # LFU可以用一个array来理解
 # 再逐步优化成用双向链表来实现
-```
 from collections import defaultdict
 
 class Node:
@@ -15807,6 +15807,7 @@ class Solution:
 #                 return False
         
 #         return True
+```
 
 #### 739. Daily Temperatures
 ```
