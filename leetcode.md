@@ -1,3 +1,5 @@
+## Leetcode
+
 #### 1. Two Sum
 ```
 class Solution:
@@ -1933,6 +1935,53 @@ class Solution:
         return res
 ```
 
+#### 62. Unique Paths
+```
+class Solution:
+    def uniquePaths(self, m: 'int', n: 'int') -> 'int':
+        dp = [[0] * n for _ in range(m)]
+        for i in range(m):
+            dp[i][0] = 1
+        for j in range(n):
+            dp[0][j] = 1
+        
+        for i in range(1, m):
+            for j in range(1, n):
+                dp[i][j] += dp[i - 1][j] + dp[i][j - 1]
+        
+        return dp[-1][-1]
+```
+
+#### 63. Unique Paths II
+```
+class Solution:
+    def uniquePathsWithObstacles(self, obstacleGrid: 'List[List[int]]') -> 'int':
+        # 跟1不一样的地方就是有障碍物点
+        if not obstacleGrid or not obstacleGrid[0]:
+            return 0
+        
+        m, n = len(obstacleGrid), len(obstacleGrid[0])
+        dp = [[0] * n for _ in range(m)]
+        
+        for i in range(m):
+            if obstacleGrid[i][0] == 1:
+                break
+            dp[i][0] = 1
+        
+        for j in range(n):
+            if obstacleGrid[0][j] == 1:
+                break
+            dp[0][j] = 1
+        
+        for i in range(1, m):
+            for j in range(1, n):
+                if obstacleGrid[i][j] == 1:
+                    continue
+                dp[i][j] = dp[i - 1][j] + dp[i][j - 1]
+        
+        return dp[-1][-1]
+```
+
 #### 65. Valid Number
 ```
 class Solution:
@@ -2083,6 +2132,22 @@ class Solution:
         if curr_line:
             results.append(self._format_last(curr_line, max_width))
         return results
+
+        # 最简洁的做法！！！
+        # lines = []
+        # curr_line = []
+        # one_line_letters = 0
+        # for word in words:
+        #     if len(word) + one_line_letters + len(curr_line) > maxWidth:
+        #         for i in range(maxWidth - one_line_letters):
+        #             curr_line[i % (len(curr_line) - 1 or 1)] += ' '
+        #         lines.append(''.join(curr_line))
+        #         curr_line = []
+        #         one_line_letters = 0
+        #     curr_line.append(word)
+        #     one_line_letters += len(word)
+        # lines.append(' '.join(curr_line).ljust(maxWidth))
+        # return lines
 ```
 
 #### 69. Sqrt(x)
@@ -2756,6 +2821,18 @@ class Solution:
             curr = top.right
         
         return res
+```
+
+#### 96. Unique Binary Search Trees
+```
+class Solution:
+    def numTrees(self, n: 'int') -> 'int':
+        dp = [0] * (n + 1)
+        dp[0] = dp[1] = 1
+        for i in range(2, n + 1):
+            for j in range(i):
+                dp[i] += dp[j] * dp[i - j - 1]
+        return dp[n]
 ```
 
 #### 97. Interleaving String
@@ -5226,6 +5303,27 @@ class BSTIterator(object):
             node = node.left
 ```
 
+#### 174. Dungeon Game
+```
+class Solution:
+    def calculateMinimumHP(self, dungeon: 'List[List[int]]') -> 'int':
+        if not dungeon or not dungeon[0]:
+            return 0
+        
+        m, n = len(dungeon), len(dungeon[0])
+        # 这道题的精髓就是从后往前遍历
+        # dp[i][j]表示要到达目的地i j点要最少多少血量
+        dp = [[2 ** 31 - 1] * (n + 1) for _ in range(m + 1)]
+        dp[m][n - 1] = 1
+        dp[m - 1][n] = 1
+        
+        for i in range(m - 1, -1, -1):
+            for j in range(n - 1, -1, -1):
+                dp[i][j] = max(1, min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j])
+        
+        return dp[0][0]
+```
+
 #### 179. Largest Number
 ```
 from functools import cmp_to_key
@@ -6968,6 +7066,7 @@ class Solution:
         :rtype: int
         """
         # 这道题问的是需要的最少会议房间是多少
+        # 实际上就是在找有多少个重叠
         if not intervals:
             return 0
         
@@ -8571,7 +8670,8 @@ class Solution:
                         # 2. left到k-1之间气球全部打爆的分数
                         # 3. k+1到right之间全部气球打爆的分数
                         nums[left - 1] * nums[k] * nums[right + 1] + \
-                            dp[left][k - 1] + dp[k + 1][right]
+                            dp[left][k - 1] + \
+                            dp[k + 1][right],
                     )
 
         return dp[1][n]
@@ -9155,6 +9255,42 @@ class Solution:
             left += 1
             right -= 1
         return True
+```
+
+#### 337. House Robber III
+```
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution:
+    # 跟1和2不一样的地方就在于这道题是在一棵二叉树上偷窃
+    def rob(self, root: 'TreeNode') -> 'int':
+        return self._dfs(root, cache=dict())
+    
+    def _dfs(self, node, cache):
+        if not node:
+            return 0
+        
+        if node in cache:
+            return cache[node]
+        
+        val = node.val
+        if node.left:
+            val += self._dfs(node.left.left, cache) + self._dfs(node.left.right, cache)
+        if node.right:
+            val += self._dfs(node.right.left, cache) + self._dfs(node.right.right, cache)
+        
+        val = max(
+            val,
+            self._dfs(node.left, cache) + self._dfs(node.right, cache),
+        )
+        
+        cache[node] = val
+        return val
 ```
 
 #### 339. Nested List Weight Sum
@@ -10506,7 +10642,7 @@ class Solution:
                 
                 curr_str = ''.join(strs[::-1])
                 stack.append(curr_str * repeat)
-        
+
         return ''.join(stack)
 ```
 
@@ -12295,6 +12431,8 @@ class Solution:
         # 所以如果大于等于0就不会输
         return self._dfs(nums, start=0, end=n - 1, mem=mem) >= 0
     
+    # dfs的定义是在start和end的状态下
+    # 先取石子的人会比后取石子的人多多少分
     def _dfs(self, nums, start, end, mem):
         if mem[start][end] != -1:
             return mem[start][end]
@@ -12355,8 +12493,9 @@ class Solution:
         # 所以用相对于远点(0, 0)的位置作为visited
         visited = set()
         # 初始：robot以(0, 1)的方向到达(0, 0)点
-        self._dfs(robot, 0, 0, 0, 1, visited)
+        self._dfs(robot, x=0, y=0, dx=0, dy=1, visited=visited)
     
+    # 注意：当每次递归调用完dfs后，robot是回到原处的
     def _dfs(self, robot, x, y, dx, dy, visited):
         robot.clean()
         visited.add((x, y))
@@ -12623,6 +12762,9 @@ class Solution:
         """
         # Maze I是问能不能到达
         # 这道题是问最短的距离是多少
+        # 当时遇到这道题的时候由于思路定式不知道小球该往哪儿走
+        # 被这里卡住了
+        # 其实方向随便选，设定一个有序的方向数组就好了
         # 核心思路BFS
         m, n = len(maze), len(maze[0])
         dists = [[2 ** 31 - 1] * n for _ in range(m)]
@@ -12655,7 +12797,9 @@ class Solution:
                 # 点i j可以通过不同距离的路径到达
                 # 如果当前到达i j是更短的距离
                 # 就可以重新更新一下
-                # 感觉可以优化？？
+                # 注意这里跟常规的BFS求极值不同
+                # 不能直接return当前的dist
+                # 因为很可能后面还会有更小的值
                 if dists[i][j] > dist:
                     dists[i][j] = dist
                     if i != destination[0] or j != destination[1]:
@@ -14036,8 +14180,10 @@ class Solution:
             elif need[num] > 0:
                 need[num] -= 1
                 need[num + 1] += 1
+                freq[num] -= 1
             # 作为某个新三连儿的开头
             elif freq[num + 1] > 0 and freq[num + 2] > 0:
+                freq[num] -= 1
                 freq[num + 1] -= 1
                 freq[num + 2] -= 1
                 need[num + 3] += 1
@@ -14046,7 +14192,6 @@ class Solution:
                 # 这个数字不能和任何的其他数字凑成连儿
                 # 是个多余的 所以可以直接返回False
                 return False
-            freq[num] -= 1
         
         return True
 ```
@@ -14506,22 +14651,25 @@ class Solution:
         for v1, v2 in edges:
             # 第一次进入递归
             # 选一个肯定不会在edges中出现的点就好了
-            if self._has_cycle(v1, v2, graph, -1):
+            if self._has_cycle(v1, v2, graph, root=-1):
                 return [v1, v2]
             graph[v1].add(v2)
             graph[v2].add(v1)
         
         return []
     
-    def _has_cycle(self, v1, v2, graph, pre):
+    # has_cycle的定义就是当添加v1 v2这条边的时候
+    # 图中会不会出现环
+    def _has_cycle(self, v1, v2, graph, root):
         if v2 in graph[v1]:
             return True
-        
+
+        # 具体思路就是不停的递归下去，看是否有某个子孙后代就是v2
         for nei in graph[v1]:
             # 避免在1 -> 2和2 -> 1之间出现死循环
-            if pre == nei:
+            if root == nei:
                 continue
-            if self._has_cycle(nei, v2, graph, v1):
+            if self._has_cycle(nei, v2, graph, root=v1):
                 return True
         
         return False
@@ -14538,6 +14686,11 @@ class Solution:
         """
         # 和I不一样的地方在于这道题是有向图
         # 点是从1到N的
+        # 正常的树N个点只有N - 1条边
+        # 这道题要考虑三种情况：
+        # 第一种：无环，但是有结点入度为2的结点
+        # 第二种：有环，没有入度为2的结点
+        # 第三种：有环，且有入度为2的结点
         n = len(edges)
         parents = [0] * (n + 1)
         candidate1 = []
@@ -16361,6 +16514,9 @@ class Solution:
         # 所以任意两个加油站之间的距离就在0到10 ** 8之间
         # 我们需要在这个范围内找到一个最小值，
         # 以这个最小间隔，在现有的两两加油站之间插入一共K个新油站
+        
+        # 不要被题目的开头minimize这个词误导了
+        # 这道题实际上是寻找所有能放的下K个加油站的解里面的最大值
         l, r = 0, 1e8
         while r - l > 1e-6:
             mid = l + (r - l) / 2
@@ -16805,7 +16961,7 @@ class Solution:
             # 不会对下面的判断造成影响
 
             # 核心：
-            # 这步里是说此时这个砖块是衔接四周为1(重要！只能必须得是1，不能是2, 因为2是不会掉的)和顶部的纽带
+            # 这步里是说此时这个砖块是衔接四周为1(重要！此时的grid[i][j]只能必须得是1，不能是2, 因为2是不会掉的)和顶部的纽带
             # 所以在它的周围所有为1的砖块都会掉下来
             if grid[i][j] == 1 and self._is_connected(i, j, grid):
                 res[k] = self._dfs(i, j, grid) - 1
@@ -16940,6 +17096,7 @@ class Solution:
         :type T: int
         :rtype: int
         """
+        # routes[i]表示第i号bus能到达哪些车站
         # 这道题并不是问最短的routes是什么
         # 问的是最少需要换乘几次车
         # 核心思路：广度优先
@@ -17135,6 +17292,49 @@ class Solution:
         return ''.join(s)
 ```
 
+#### 834. Sum of Distances in Tree
+```
+from collections import defaultdict
+
+class Solution:
+    def sumOfDistancesInTree(self, N: 'int', edges: 'List[List[int]]') -> 'List[int]':
+        tree = defaultdict(set)
+        # res[i]表示的是i点到其他所有点的距离总和
+        res = [0] * N
+        # count[i]表示以i为根一共有多少个子孙节点
+        count = [0] * N
+        for i, j in edges:
+            tree[i].add(j)
+            tree[j].add(i)
+        
+        self._dfs1(root=0, seen=set(), res=res, count=count, tree=tree)
+        self._dfs2(root=0, N=N, seen=set(), res=res, count=count, tree=tree)
+        
+        return res
+    
+    def _dfs1(self, root, seen, res, count, tree):
+        seen.add(root)
+        for i in tree[root]:
+            if i not in seen:
+                self._dfs1(i, seen, res, count, tree)
+                count[root] += count[i]
+                # 核心之一：
+                # i是root的孩子
+                # 所以首先res[root]可以先加上root到i节点直接距离
+                # 由于i一共有count[i]个子孙节点
+                # 则每个子孙节点到root的距离都相当于i到root的距离加1
+                # 则总体加起来的距离就是子孙节点的个数（count[i]）
+                res[root] += res[i] + count[i]
+        count[root] += 1
+    
+    def _dfs2(self, root, N, seen, res, count, tree):
+        seen.add(root)
+        for i in tree[root]:
+            if i not in seen:
+                res[i] = (res[root] - count[i]) + N - count[i]
+                self._dfs2(i, N, seen, res, count, tree)
+```
+
 #### 835. Image Overlap
 ```
 from collections import Counter
@@ -17217,6 +17417,8 @@ class Solution:
 #        :type word: str
 #        :rtype int
 #        """
+from collections import Counter
+from itertools import permutations
 
 class Solution:
     def findSecretWord(self, wordlist, master):
@@ -17233,10 +17435,11 @@ class Solution:
             # count的含义是指将wordlist中的词两两比较
             # 看有多少个词跟其他的词完全不一样
             # Counter实例是一个字典，但是支持defaultdict的特性（访问不存在的元素会返回默认值）
-            count = collections.Counter(
-                w1 for w1, w2 in itertools.permutations(wordlist, 2) \
-                    if self._match(w1, w2) == 0
-            )
+            diff_words = []
+            for w1, w2 in permutations(wordList, 2):
+                if slef._match(w1, w2) == 0:
+                    diff_words.append(w1)
+            count = Counter(diff_words)
             # 基本思路就是从count中取出与wordlist中的某个词与其他词两两不match这种情况出现最多的词
             # 核心之一：注意这里实际上隐含了一个条件
             # 我们用min函数，如果当前count为空，count[w]就是0
@@ -17248,6 +17451,9 @@ class Solution:
             # 这就是wordlist的更新式子有由来
             guess = min(wordlist, key=lambda w: count[w])
             n = master.guess(guess)
+            # 为什么要选两两不一样最少的词？
+            # 原因就在下面的循环，这样可以最大的去除一大部分词（因为和这个词一样的词很少，
+            # 反过来说和这个词不一样的词很多，在if的条件里就能尽可能的去除）
             wordlist = [w for w in wordlist if self._match(w, guess) == n]
             
     def _match(self, w1, w2):
@@ -17364,7 +17570,7 @@ class Solution:
         # 如果最右边是0
         # 需要再检查一遍
         if seats[-1] == 0:
-            max_dis = max(max_dis, len(seats) - left - 1)
+            max_dis = max(max_dis, len(seats) - 1 - left)
         
         return max_dis
 ```
@@ -17554,7 +17760,7 @@ class Solution:
         2. 每个工人的薪水要满足最少wage[i]的薪水
         求最少的cost能凑成这样一个group
         """
-        # 越高说明好(价格除以质量)
+        # 这道题理解上有个误区  并不是要找最高质量的group
         q_w_ratio = sorted((w / q, q, w) for q, w in zip(quality, wage))
         
         max_heap = []
@@ -17757,6 +17963,35 @@ class Solution:
             if not self._dfs(neighbor, not curr_color, color_map, graph):
                 return False
 
+        return True
+```
+
+#### 890. Find and Replace Pattern
+```
+from collections import defaultdict
+
+class Solution:
+    def findAndReplacePattern(self, words: 'List[str]', pattern: 'str') -> 'List[str]':
+        # 这道题是判断words中那些词和pattern一样
+        # 比如abb和opp就是一个pattern
+        res = []
+        for word in words:
+            if self._helper(word, pattern):
+                res.append(word)
+        return res
+    
+    def _helper(self, word, pattern):
+        word_map = dict()
+        pattern_map = dict()
+        
+        for w, p in zip(word, pattern):
+            if w not in word_map:
+                word_map[w] = p
+            if p not in pattern_map:
+                pattern_map[p] = w
+            if (word_map[w], pattern_map[p]) != (p, w):
+                return False
+        
         return True
 ```
 

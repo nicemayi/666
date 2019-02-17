@@ -116,6 +116,7 @@ class Solution:
             return 0
 
         n = len(s)
+        # dp[i][j]的定义是字符串i到j之间最长的回文子序列长度
         dp = [[0] * n for _ in range(n)]
         
         for i in range(n - 1, -1, -1):
