@@ -7005,8 +7005,6 @@ class Solution(object):
 # param_1 = obj.shortest(word1,word2)
 ```
 
-```
-
 #### 246. Strobogrammatic Number
 ```
 class Solution:
