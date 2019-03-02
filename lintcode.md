@@ -206,6 +206,7 @@ class Solution:
         
         target_code = 0
         for i in range(len_t):
+            # Robin-Karp核心公式
             target_code = (target_code * 31 + ord(target[i])) % M
         
         curr_code = 0
@@ -406,6 +407,7 @@ class Solution:
     """
     def findMin(self, nums):
         # write your code here
+        # 这道题是给定了nums中没有重复的元素
         # rotated array系列有很多题
         # 一类是找最大/最小(比如这道)
         # 一类是找目标值
@@ -415,7 +417,7 @@ class Solution:
             return nums[0]
         if nums[0] < nums[-1]:
             return nums[0]
-        
+
         start, end = 0, len(nums) - 1
         while start + 1 < end:
             mid = start + (end - start) // 2
@@ -428,7 +430,7 @@ class Solution:
                 start = mid + 1
             else:
                 end = mid - 1
-        
+
         if nums[start] > nums[end]:
             return nums[end]
         return nums[start]
@@ -465,6 +467,8 @@ class Solution:
     """
     def findPeak(self, A):
         # write your code here
+        # 相邻位置的数字是不同的
+        # A[0] < A[1] 并且 A[n - 2] > A[n - 1]
         # 题目给定A的长度大于等于3
         # 九章官方答案有点啰嗦+confusing
         start, end = 1, len(A) - 2
@@ -818,6 +822,7 @@ class Solution:
         # write your code here
         # 跟28 I几乎一模一样
         # 只不过I是问存不存在
+        # 这道题是问有多少个target数字存在
         if not matrix or not matrix[0]:
             return 0
         
@@ -973,7 +978,7 @@ class Solution:
         low, high = min(nums), max(nums)
         while high - low > 1e-7:
             mid = (low + high) / 2
-            if self._check(nums, k, mid):
+            if self._check(nums, k, mean=mid):
                 low = mid
             else:
                 high = mid
@@ -1080,7 +1085,7 @@ class Solution:
                 return True
             
             if A[mid] > A[start]:
-                if A[mid] > target >= A[start]:
+                if A[start] <= target < A[mid]:
                     end = mid - 1
                 else:
                     start = mid + 1
@@ -1313,6 +1318,7 @@ class Solution:
         self._quick_sort(A, l, p - 1)
         self._quick_sort(A, p + 1, r)
     
+    # 必背必背！！！！
     def _partition(self, A, l, r):
         pivot_value = A[l]
         j = l
@@ -1334,12 +1340,12 @@ class Solution:
     """
     def twoSum(self, nums, target):
         # write your code here
-        
         if not nums:
             return [-1, -1]
         
         left, right = 0, len(nums) - 1
-        
+
+        # 经典的滑动窗口对撞指针问题
         while left < right:
             total = nums[left] + nums[right]
             if total == target:
@@ -1514,6 +1520,8 @@ class Solution:
         # pre_sum数组：
         # 如果要求原数组中[l, r]左闭右闭的区间的和
         # 在pre_sum数组中就是pre_sum[r + 1] - pre_sum[l]
+        # 注意别把这道题和窗口最大数组那道题弄混了
+        # 那道题是维护一个递增的双端队列（存的是index）
         pre_sum = [0]
         for i in range(len(nums)):
             pre_sum.append(nums[i] + pre_sum[-1])
@@ -1550,7 +1558,7 @@ class Solution:
     def twoSum5(self, nums, target):
         # write your code here
         # 注意审题！！！
-        # 这道题问的是有多少对（2个元素）的和为target
+        # 这道题o问的是有多少对（2个元素）的和小于等于target
         # 不是子数组的和
         if not nums:
             return 0
@@ -1566,7 +1574,7 @@ class Solution:
             else:
                 # 怎么理解？
                 # 由于nums是sort过的
-                # 所以这里实际上是说以r结尾的对儿有多少个
+                # 所以这里实际上是说以l开头的对儿有多少个
                 # 所以是r - l个
                 res += r - l
                 l += 1
@@ -1667,6 +1675,7 @@ class Solution:
         while l < r:
             curr = nums[l] + nums[r]
             if curr > target:
+                # 这里的定义是以r结尾的对儿有多少个
                 res += r - l
                 r -= 1
             else:
@@ -1735,6 +1744,8 @@ class Solution:
         S.sort()
         res = 0
         
+        # 从大到小遍历
+        # fix这个i，然后看l和r能不能凑成三角形的条件
         for i in range(len(S) - 1, -1, -1):
             l, r = 0, i - 1
             while l < r:
@@ -1768,6 +1779,9 @@ class Solution:
                 i += 1
             else:
                 nums[i], nums[r] = nums[r], nums[i]
+                # 这时候不能轻易的i += 1
+                # 因为此时是从未来换过来的nums[r]
+                # 不知道这个数还需不需要调整
                 r -= 1
 ```
 
@@ -1812,10 +1826,14 @@ class Solution:
     """
     def pancakeSort(self, array):
         # Write your code here
+        # flip(arr, i): 翻转数组中下标从 0 到 i 的元素
         for i in range(len(array) - 1, 0, -1):
+            # 下面的循环实际上找的是0到i之间的最大值
+            # 先将其放到了arr[0]的位置上
             for j in range(i, 0, -1):
                 if array[j] > array[0]:
                     FlipTool.flip(array, j)
+            # 再将其翻转到本次循环的i位置上
             FlipTool.flip(array, i)
 ```
 
@@ -1831,6 +1849,11 @@ class Solution:
     def partition2(self, nums, low, high):
         # write your code here
         # 基本思路跟sort color I一模一样
+        # 将一个没有经过排序的整数数组划分为3部分:
+        # 1.第一部分中所有的值都 < low
+        # 2.第二部分中所有的值都 >= low并且 <= high
+        # 3.第三部分中所有的值都 > high
+        # 返回任意一种可能的情况。
         if not nums:
             return
         
@@ -1872,9 +1895,11 @@ class Solution:
         target = abs(target)
         for inx, val in enumerate(nums):
             num_with_index.append((val, inx))
+        # 核心之一：开辟一个新的value和原来index的数组
         num_with_index.sort()
 
         r = 0
+        # 滑动窗口问题
         for l in range(n):
             if r == l:
                 r += 1
@@ -1970,7 +1995,7 @@ class Solution:
         #     else:
         #         curr1 = curr2
         #     if curr2 is not None:
-        #         curr2 = curr.next
+        #         curr2 = curr2.next
         #     else:
         #         curr2 = curr1
 ```
@@ -1989,6 +2014,11 @@ class Solution:
             return False
         
         slow = fast = head
+        # 按照下面的写法
+        # 当链表长度为偶数的时候
+        # slow是左半部分的最后一个节点
+        # 当链表长度为奇数的时候
+        # slow是正好中点节点
         while fast.next and fast.next.next:
             slow = slow.next
             fast = fast.next.next
@@ -3011,19 +3041,19 @@ class Union:
     def __init__(self, n):
         self._parent = [i for i in range(n)]
         self.count = 0
-    
-    def _find(self, a):
-        if self._parent[a] == a:
-            return self._parent[a]
-        self._parent[a] = self._find(self._parent[a])
-        return self._parent[a]
-    
+
     def connect(self, a, b):
         root_a = self._find(a)
         root_b = self._find(b)
         if root_a != root_b:
             self._parent[root_a] = root_b
             self.count -= 1
+
+    def _find(self, a):
+        if self._parent[a] == a:
+            return self._parent[a]
+        self._parent[a] = self._find(self._parent[a])
+        return self._parent[a]
 
 class Solution:
     """
@@ -3034,6 +3064,7 @@ class Solution:
     """
     def numIslands2(self, n, m, operators):
         # write your code here
+        # 和岛屿1不同的地方在于有了operators操作
         board = [[0] * n for _ in range(m)]
         union = Union(n * m)
         dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]
@@ -3181,8 +3212,7 @@ class Solution:
         while root:
             if abs(res - target) > abs(root.val - target):
                 res = root.val
-            
-            # 下面大于或者大于等于都是可以的
+
             if target >= root.val:
                 root = root.right
             else:
@@ -3200,23 +3230,24 @@ class Solution:
     """
     def findSubtree(self, root):
         # write your code here
+        # 这道题是要求和为最小的子树，并返回其根节点
         self._min_node = None
         self._min_sum = 2 ** 31 - 1
         self._dfs(root)
         return self._min_node
-    
+
     def _dfs(self, node):
         if not node:
             return 0
-        
+
         left_sum = self._dfs(node.left)
         right_sum = self._dfs(node.right)
         curr_node_sum = node.val + left_sum + right_sum
-        
+
         if curr_node_sum < self._min_sum:
             self._min_sum = curr_node_sum
             self._min_node = node
-        
+
         return curr_node_sum
 ```
 
@@ -3526,7 +3557,7 @@ class Solution:
         raise ValueError('should not see me!')
 ```
 
-246. 二叉树的路径和 II
+#### 246. 二叉树的路径和 II
 ```
 class Solution:
     """
@@ -3548,7 +3579,7 @@ class Solution:
             return
 
         curr.append(node.val)
-        
+
         required = target
         for l in range(level, -1, -1):
             required -= curr[l]
@@ -3711,6 +3742,7 @@ class Solution:
     def _dfs(self, root, p):
         if not root:
             return
+        # 理解成锁住当前中序的拐点
         self._dfs(root.left, p)
         if root == p:
             # 实际上九章的答案里不是直接return的
@@ -3787,8 +3819,8 @@ class Solution:
     def _dfs(self, node, target, res):
         if not node:
             return
-        
-        # 先去递归巡展包含node本身的path
+
+        # 先去递归扩展包含node本身的path
         self._find_sum(node, None, target, [], res)
         
         # 再去递归不包含node本身的path
@@ -3830,7 +3862,7 @@ class Solution:
     def _dfs(self, node):
         if not node:
             return 0
-        
+
         left_longest = self._dfs(node.left)
         right_longest = self._dfs(node.right)
         
@@ -4317,7 +4349,7 @@ class Solution:
     @return: A boolean
     """
     def __init__(self):
-        self._hash = {}
+        self._hash = dict()
 
     def isMatch(self, s, p):
         # write your code here
@@ -4511,6 +4543,9 @@ class Solution:
     """
     def removeInvalidParentheses(self, s):
         # Write your code here
+        # 题目是问删除最小数目的无效括号
+        # 使得输入的字符串有效
+        # 并返回所有可能的结果
         visited = set()
         done = False
         queue = deque()
@@ -4548,7 +4583,6 @@ class Solution:
                 count += 1
             elif ch == ')':
                 count -= 1
-            
             if count < 0:
                 return False
         
@@ -4678,6 +4712,7 @@ class Solution:
 
 #### 108. 分割回文串 II
 ```
+# 理解的不好
 class Solution:
     """
     @param s: A string
@@ -5414,7 +5449,9 @@ class Solution:
         m, n = len(board), len(board[0])
         for di, dj in self._DIRS:
             newi, newj = di + ci, dj + cj
-            if 0 <= newi < m and 0 <= newj < n and not visited[newi][newj] and board[newi][newj] == word[0]:
+            if 0 <= newi < m and 0 <= newj < n \
+                    and not visited[newi][newj] \
+                    and board[newi][newj] == word[0]:
                 visited[newi][newj] = True
                 if self._dfs(board, word[1:], newi, newj, visited):
                     return True
@@ -5448,7 +5485,7 @@ from collections import deque
 class Stack:
     
     def __init__(self):
-        # 实际上此时两个队列是平等的（跟两个队列实现栈那道题不一样）
+        # 实际上此时两个队列是平等的
         # 我们只需要保证始终有一个队列为空即可
         # 这里的queue1只是表示优先操作的队列
         # 实际上这道题用一个queue也能完成
@@ -5497,7 +5534,7 @@ class Solution:
         for ch in string:
             mapping[ch] += 1
         
-        for inx, ch in enumerate(string):
+        for ch in string:
             if mapping[ch] == 1:
                 return ch
 ```
@@ -5522,7 +5559,8 @@ class RandomizedSet:
         # write your code here
         if val in self._mapping:
             return False
-    
+
+        # 此时val是不在mapping中的
         self._data.append(val)
         self._mapping[val] = len(self._data) - 1
         return True
@@ -5536,9 +5574,10 @@ class RandomizedSet:
         if val not in self._mapping:
             return False
         
+        # val一定是在mapping中的才能进行remove
         if val == self._data[-1]:
             self._data.pop()
-            del self._mapping[val]
+            self._mapping.pop(val)
             return True
         
         # 想要从array里O(1)删除一个目标数字怎么做？
@@ -5546,12 +5585,13 @@ class RandomizedSet:
         # 再找到目标数字的index
         # 将对应的index上覆盖为temp
         # 再去修改temp对应的坐标为目标数字的index
-        # 最后别忘了删除掉这个key
+        # 最后别忘了从mapping中删除掉这个key
         temp = self._data.pop()
         val_inx = self._mapping[val]
         self._data[val_inx] = temp
         self._mapping[temp] = val_inx
-        del self._mapping[val]
+        self._mapping.pop(val)
+
     """
     @return: Get a random element from the set
     """
@@ -5618,6 +5658,7 @@ class Solution:
     @param: k: An integer
     @return: the top k largest numbers in array
     """
+    # 单机版的最优解法就是quick select
     def topk(self, nums, k):
         # write your code here
         if k == 0 or k > len(nums) or not nums:
@@ -5709,6 +5750,8 @@ class MyQueue:
         # write your code here
         self._stack_push.append(element)
 
+    # 凡是在pop和top的操作
+    # 都需要做一下调整
     def pop(self):
         # write your code here
         self._adjust()
@@ -5721,7 +5764,7 @@ class MyQueue:
     
     def _adjust(self):
         # 只有当stack_pop为空的时候才能调整！！！
-        if not self._stack_pop:
+        if len(self._stack_pop) == 0:
             while self._stack_push:
                 self._stack_pop.append(self._stack_push.pop())
 ```
