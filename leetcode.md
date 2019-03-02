@@ -4574,6 +4574,62 @@ class LRUCache(object):
             if len(self.cache) == self.capacity:
                 self.cache.popitem(last=False)
         self.cache[key] = value
+
+# 更标准的解法（面试官可能想考察双向链表）
+class Node:
+    def __init__(self, k, v):
+        self.key = k
+        self.val = v
+        self.prev = None
+        self.next = None
+
+class LRUCache:
+
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.dict = dict()
+        self.head = Node(0, 0)
+        self.tail = Node(0, 0)
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def get(self, key: int) -> int:
+        if key in self.dict:
+            node = self.dict[key]
+            self._remove(node)
+            self._add(node)
+            return node.val
+        return -1
+
+    def put(self, key: int, value: int) -> None:
+        if key in self.dict:
+            self._remove(self.dict[key])
+        node = Node(key, value)
+        self._add(node)
+        self.dict[key] = node
+        if len(self.dict) > self.capacity:
+            temp = self.head.next
+            self._remove(temp)
+            self.dict.pop(temp.key)
+    
+    def _remove(self, node):
+        _prev = node.prev
+        _next = node.next
+        _prev.next = _next
+        _next.prev = _prev
+    
+    def _add(self, node):
+        _prev = self.tail.prev
+        _prev.next = node
+        self.tail.prev = node
+        node.prev = _prev
+        node.next = self.tail
+
+
+# Your LRUCache object will be instantiated and called as such:
+# obj = LRUCache(capacity)
+# param_1 = obj.get(key)
+# obj.put(key,value)
 ```
 
 #### 148. Sort List
@@ -7655,14 +7711,15 @@ class Solution:
         # 20到90
         # 100
         # 一千，一百万，十亿
-        level1 = ("Zero One Two Three Four Five Six Seven Eight Nine Ten" + \
-                 " Eleven Twelve Thirteen Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen").split()
-        level2 = "Twenty Thirty Forty Fifty Sixty Seventy Eighty Ninety".split()
-        level3 = "Hundred"
-        level4 = "Thousand Million Billion".split()
+        level1 = ('Zero One Two Three Four Five Six Seven Eight Nine Ten' + \
+                 ' Eleven Twelve Thirteen Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen').split()
+        level2 = 'Twenty Thirty Forty Fifty Sixty Seventy Eighty Ninety'.split()
+        level3 = 'Hundred'
+        level4 = 'Thousand Million Billion'.split()
         
         words, digits = deque(), 0
         while num:
+            # 注意：这道题是从小到大三位三位数字处理的
             token = num % 1000
             num //= 1000
             word = ''
@@ -11573,6 +11630,7 @@ class AllOne:
         :type key: str
         :rtype: void
         """
+        # 生成当前的，调整过去的
         self.key_counter[key] += 1
         cf = self.key_counter[key]
         pf = self.key_counter[key] - 1
@@ -11590,6 +11648,7 @@ class AllOne:
         :type key: str
         :rtype: void
         """
+        # 同理也是生成当前的，调整过去的
         if key in self.key_counter:
             self.key_counter[key] -= 1
             cf = self.key_counter[key]
@@ -12226,172 +12285,180 @@ class Solution:
 
 #### 460. LFU Cache
 ```
-# 这道题不是太懂，抄的leetcode discussion解答
-# LFU可以用一个array来理解
-# 再逐步优化成用双向链表来实现
 from collections import defaultdict
 
 class Node:
     def __init__(self, key, value):
         self.key = key
         self.value = value
-        self.prev = self.nxt = None 
+        self.prev = self.next = None
 
 class DoubleLinkedList:
     def __init__(self):
-        self.head_sentinel = Node(None, None)
-        self.tail_sentinel = Node(None, None)
-        self.count = 0
-        self.head_sentinel.nxt = self.tail_sentinel
-        self.tail_sentinel.prev = self.head_sentinel
+        self.dummy_head = Node(0, 0)
+        self.dummy_tail = Node(0, 0)
+        self._count = 0
+        self.dummy_head.next = self.dummy_tail
+        self.dummy_tail.prev = self.dummy_head
     
-    def insert(self, x, node):
-        temp = x.nxt
-        x.nxt, node.prev = node, x
-        node.nxt, temp.prev = temp, node
-        self.count += 1
-
-    def appendleft(self, node):
-        self.insert(self.head_sentinel, node)
-
-    def append(self, node):
-        self.insert(self.get_tail(), node)
-
+    # 将new_node插入到existing_node后面
+    def insert(self, existing_node, new_node):
+        temp = existing_node.next
+        existing_node.next = new_node
+        new_node.prev = existing_node
+        new_node.next = temp
+        temp.prev = new_node
+        self._count += 1
+    
+    # 将这个node从双向链表中移除
     def remove(self, node):
-        prev_node = node.prev
-        prev_node.nxt, node.nxt.prev = node.nxt, prev_node
-        self.count -= 1
-
-    def pop():
-        self.remove(self.get_tail())
-
-    def popleft():
-        self.remove(self.get_head())
+        prev = node.prev
+        prev.next = node.next
+        node.next.prev = prev
+        self._count -= 1
 
     def size(self):
-        return self.count
-
+        return self._count
+    
     def get_head(self):
-        return self.head_sentinel.nxt if self.count > 0 else None
+        if self._count > 0:
+            return self.dummy_head.next
+        return None
     
     def get_tail(self):
-        return self.tail_sentinel.prev if self.count > 0 else None        
+        if self._count > 0:
+            return self.dummy_tail.prev
+        return None
 
-class LinkedHashSet:
+    def append(self, node):
+        self.insert(self.dummy_tail, node)
+        
+    def append_left(self, node):
+        self.insert(self.dummy_head, node)
+    
+    def pop(self):
+        self.remove(self.get_tail())
+    
+    def pop_left(self):
+        self.remove(self.get_head())
+
+class LinkedHashMap:
+    # 实质上LFU就是一个二级key的hash map
+    # 第一级的key是frequency
+    # 第二级的key才是真正的key
     def __init__(self):
+        # 基本数据结构就是用一个dict
+        # key就是key，value是对应着在一个双向链表中的节点(这个节点也用key和value生成)
+        # 这样就很方便的可以用O（1）来定位节点的位置
+        # 方便插入删除操作
         self.node_map = dict()
-        self.dll = DoubleLinkedList()
-
+        self.ddl = DoubleLinkedList()
+    
     def size(self):
         return len(self.node_map)
-        
+    
     def contains(self, key):
         return key in self.node_map
     
-    def search(self, key):
+    def get(self, key):
         return self.node_map[key].value
-
-    def appendleft(self, key, value):
-        if self.contains(key) == False:
-            node = Node(key, value)
-            self.dll.appendleft(node)
-            self.node_map[key] = node
-        else:
-            self.node_map[key].value = value
-            self.moveleft(key)
-
-    def append(self, key, value):
-        if self.contains(key) == False:
-            node = Node(key, value)
-            self.dll.append(node)
-            self.node_map[key] = node
-        else:
-            self.node_map[key].value = value
-            self.moveright(key)
     
-    def moveleft(self, key):
-        node = self.node_map[key]
-        self.dll.remove(node)
-        self.dll.appendleft(node)
-
-    def moveright(self, key):
-        node = self.node_map[key]
-        self.dll.remove(node)
-        self.dll.append(node)
-
+    # 注意：
+    # 下面的三个涉及到移动的操作：remove, move_left, move_right
+    # 都是针对key来移动的
+    # 将key对应的node从双向链表中移除
     def remove(self, key):
         node = self.node_map[key]
-        self.dll.remove(node)
+        self.ddl.remove(node)
         self.node_map.pop(key)
     
-    def popleft(self):
-        key = self.dll.get_head().key
+    # 将key对应的node移动到双向链表的最左端
+    def move_left(self, key):
+        node = self.node_map[key]
+        self.ddl.remove(node)
+        self.ddl.append_left(node)
+    
+    # 将key对应的node移动到双向链表的最右端
+    def move_right(self, key):
+        node = self.node_map[key]
+        self.ddl.remove(node)
+        self.ddl.append(node)
+
+    def append(self, key, value):
+        if not self.contains(key):
+            node = Node(key, value)
+            self.ddl.append(node)
+            self.node_map[key] = node
+        else:
+            self.node_map[key].value = value
+            self.move_right(key)
+    
+    def append_left(self, key, value):
+        if not self.contains(key):
+            node = Node(key, value)
+            self.ddl.append_left(node)
+            self.node_map[key] = node
+        else:
+            self.node_map[key].value = value
+            self.move_left(key)
+    
+    def pop(self):
+        key = self.ddl.get_tail().key
         self.remove(key)
         return key
-
-    def pop(self):
-        key = self.dll.get_tail().key
+    
+    def pop_left(self):
+        key = self.ddl.get_head().key
         self.remove(key)
         return key
 
 class LFUCache:
-    def __init__(self, capacity):
-        """
-        :type capacity: int
-        """
-        self.cap = capacity
-        self.min_f = -1
-        # key:(value, frequency)
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.min_freq = -1
+        # cache里存的形式是：key: [value, frequency]
         self.cache = dict()
-        # frequency:LinkedHashSet
-        self.freq_map = defaultdict(LinkedHashSet)
+        # freq_map里存的形式是：freq: LinkedHashMap(其中里面是key：（key, value）形式的node)
+        self.freq_map = defaultdict(LinkedHashMap)
 
-    def get(self, key):
-        """
-        :type key: int
-        :rtype: int
-        """
+    def get(self, key: int) -> int:
         if key in self.cache:
-            # Update new frequency
-            # Update freq_map
-            # Move key to front in its linkedHashSet
-            # Update new minimum frequency
-            v, f = self.cache[key][0], self.cache[key][1]
+            value, old_freq = self.cache[key]
             self.cache[key][1] += 1
             
-            f_count_zero = False
-            self.freq_map[f].remove(key)
-            if self.freq_map[f].size() == 0:
-                f_count_zero = True
-                self.freq_map.pop(f)
-            self.freq_map[f + 1].appendleft(key, v)
-                
-            if f == self.min_f and f_count_zero == True:
-                self.min_f += 1  
-            return v
+            old_freq_is_zero = False
+            self.freq_map[old_freq].remove(key)
+            if self.freq_map[old_freq].size() == 0:
+                old_freq_is_zero = True
+                self.freq_map.pop(old_freq)
+            self.freq_map[old_freq + 1].append_left(key, value)
+            
+            if old_freq == self.min_freq and old_freq_is_zero:
+                self.min_freq += 1
+            return value
+    
         return -1
-
-    def put(self, key, value):
-        """
-        :type key: int
-        :type value: int
-        :rtype: void
-        """
-        if self.cap == 0:
+            
+    def put(self, key: int, value: int) -> None:
+        if self.capacity == 0:
             return
         if key in self.cache:
             self.cache[key][0] = value
+            # 主要是为了触发一下key的freq增值
             self.get(key)
         else:
-            curr_size = len(self.cache)
-            if curr_size == self.cap:
-                min_list = self.freq_map[self.min_f]
-                x = min_list.pop()
-                self.cache.pop(x)
-            
+            if len(self.cache) == self.capacity:
+                min_freq_linkedlisthashmap = self.freq_map[self.min_freq]
+                min_freq_node = min_freq_linkedlisthashmap.pop()
+                self.cache.pop(min_freq_node)
             self.cache[key] = [value, 1]
-            self.freq_map[1].appendleft(key, value)
-            self.min_f = 1
+            self.freq_map[1].append_left(key, value)
+            self.min_freq = 1
+            
+# Your LFUCache object will be instantiated and called as such:
+# obj = LFUCache(capacity)
+# param_1 = obj.get(key)
+# obj.put(key,value)
 ```
 
 #### 463. Island Perimeter
