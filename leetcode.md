@@ -7000,11 +7000,11 @@ class Solution(object):
                     res = min(res, abs(p1 - p2))
         
         return res
-```
-
 # Your WordDistance object will be instantiated and called as such:
 # obj = WordDistance(words)
 # param_1 = obj.shortest(word1,word2)
+```
+
 ```
 
 #### 246. Strobogrammatic Number
