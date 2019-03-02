@@ -1328,6 +1328,36 @@ class Solution:
             current.pop()
 ```
 
+#### 40. Combination Sum II
+```
+class Solution:
+    def combinationSum2(self, candidates: List[int], target: int) -> List[List[int]]:
+        if not candidates:
+            return target == 0
+        
+        candidates.sort()
+        res = []
+        self._dfs(candidates, target, 0, [], res)
+        return res
+    
+    def _dfs(self, candidates, target, start, curr, res):
+        if target == 0:
+            res.append(curr[:])
+            return
+        
+        for i in range(start, len(candidates)):
+            if i > start and candidates[i] == candidates[i - 1]:
+                continue
+            if target >= candidates[i]:
+                self._dfs(
+                    candidates,
+                    target - candidates[i],
+                    i + 1,
+                    curr + [candidates[i]],
+                    res,
+                )
+```
+
 #### 41. First Missing Positive
 ```
 class Solution:
@@ -1771,7 +1801,9 @@ class Solution:
 #### 53. Maximum Subarray
 ```
 class Solution:
+
     _INT_MIN = -2147483648
+
     def maxSubArray(self, nums):
         """
         :type nums: List[int]
@@ -2172,6 +2204,24 @@ class Solution:
             return end
         
         return start
+```
+
+#### 70. Climbing Stairs
+```
+class Solution:
+    def climbStairs(self, n):
+        """
+        :type n: int
+        :rtype: int
+        """
+        if 0 <= n <= 1:
+            return 1
+        
+        a, b = 1, 1
+        for i in range(2, n + 1):
+            a, b = b, a + b
+        
+        return b
 ```
 
 #### 71. Simplify Path
@@ -3006,7 +3056,6 @@ class Solution:
     
     
     def helper(self, left, right):
-        
         if left and not right:
             return False
         
@@ -4322,9 +4371,6 @@ class Solution(object):
 ```
 
 #### 141. Linked List Cycle
-***
-Given a linked list, determine if it has a cycle in it.
-***
 ```
 # Definition for singly-linked list.
 # class ListNode(object):
@@ -4332,12 +4378,13 @@ Given a linked list, determine if it has a cycle in it.
 #         self.val = x
 #         self.next = None
 
-class Solution(object):
+class Solution:
     def hasCycle(self, head):
         """
         :type head: ListNode
         :rtype: bool
         """
+        # 这道题是判断链表里有没有环
         if not head:
             return False
 
@@ -4354,6 +4401,42 @@ class Solution(object):
                     return True
             else:
                 return False
+```
+
+#### 142. Linked List Cycle II
+```
+# Definition for singly-linked list.
+# class ListNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.next = None
+
+class Solution(object):
+    def detectCycle(self, head):
+        """
+        :type head: ListNode
+        :rtype: ListNode
+        """
+        if not head or not head.next:
+            # 显式返回一个空
+            return None
+        
+        slow = fast = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+            if slow is fast:
+                break
+        
+        if slow is not fast:
+            return
+
+        new_slow = head
+        while new_slow is not slow:
+            new_slow = new_slow.next
+            slow = slow.next
+        
+        return new_slow
 ```
 
 #### 143. Reorder List
@@ -4898,7 +4981,7 @@ class Solution(object):
         :rtype: The number of characters read (int)
         """
         # 输入的buf就是一个能承装n个字符的array的引用
-        # 输入的buf4就是一个能承装4个字符的array的引用
+        # 在当前函数域内设置一个大小为4个cache
         buf4 = [None] * 4
         offset = 0
         
@@ -5035,14 +5118,14 @@ class Solution(object):
         return None
     
     # 下面的是LC高票，思路实在太屌了
-    if not head1 or not head2:
-        return
+    # if not head1 or not head2:
+    #     return
     
-    curr1, curr2 = head1, head2
-    while curr1 is not curr2:
-        curr1 = curr1.next if curr1 else curr2
-        curr2 = curr2.next if curr2 else curr1
-    return curr1
+    # curr1, curr2 = head1, head2
+    # while curr1 is not curr2:
+    #     curr1 = curr1.next if curr1 else curr2
+    #     curr2 = curr2.next if curr2 else curr1
+    # return curr1
 ```
 
 #### 161. One Edit Distance
@@ -5229,6 +5312,7 @@ class Solution:
 #### 170. Two Sum III - Data structure design
 ```
 from collections import defaultdict
+
 class TwoSum:
 
     def __init__(self):
@@ -6828,7 +6912,39 @@ class WordDistance:
                 p2 += 1
         
         return res
+```
 
+#### 245. Shortest Word Distance III
+```
+class Solution(object):
+    def shortestWordDistance(self, words, word1, word2):
+        """
+        :type words: List[str]
+        :type word1: str
+        :type word2: str
+        :rtype: int
+        """
+        p1 = p2 = -1
+        res = 2 ** 31 - 1
+
+        for i in range(len(words)):
+            temp = p1
+            if words[i] == word1:
+                p1 = i
+            if words[i] == word2:
+                p2 = i
+            if p1 != -1 and p2 != -1:
+                # 最后一个条件temp != p1实际上隐含着说本次循环中
+                # p1被更新了。因为在if条件中同时满足了word1 == word2
+                # 就是说此时p2也是被更新了
+                if word1 == word2 and temp != -1 and temp != p1:
+                    res = min(res, abs(temp - p1))
+                # 此时就是常规每轮比较一下
+                elif p1 != p2:
+                    res = min(res, abs(p1 - p2))
+        
+        return res
+```
 
 # Your WordDistance object will be instantiated and called as such:
 # obj = WordDistance(words)
@@ -7126,7 +7242,9 @@ class Solution:
 #### 256. Paint House
 ```
 class Solution:
+
     INT_MAX = 2 ** 31 - 1
+
     def minCost(self, costs):
         """
         :type costs: List[List[int]]
@@ -7298,6 +7416,32 @@ class Solution:
                 graph[each].remove(curr_point)
         
         return len(visited) == n
+```
+
+#### 265. Paint House II
+```
+class Solution:
+    
+    _INT_MAX = 2 ** 31 - 1
+    
+    def minCostII(self, costs):
+        """
+        :type costs: List[List[int]]
+        :rtype: int
+        """
+        if not costs or not costs[0]:
+            return 0
+        
+        num_of_houses, num_of_colors = len(costs), len(costs[0])
+        dp = [[self._INT_MAX] * num_of_colors for _ in range(num_of_houses)]
+        dp[0] = costs[0][:]
+        
+        for i in range(1, num_of_houses):
+            for j in range(num_of_colors):
+                dp[i][j] = costs[i][j] + \
+                    min(dp[i - 1][k] for k in range(num_of_colors) if k != j)
+        
+        return min(dp[-1])
 ```
 
 #### 266. Palindrome Permutation
@@ -9183,16 +9327,16 @@ class Solution:
     def increasingTriplet(self, nums: 'List[int]') -> 'bool':
         # 审题！！！这道题要求的是子序列
         # 应该想到使用两个全局变量的解法！！
-        m1 = m2 = 2 ** 31 - 1
+        lowest = second_lowest = 2 ** 31 - 1
         for num in nums:
-            if num <= m1:
-                m1 = num
-            elif num <= m2:
-                m2 = num
+            if num <= lowest:
+                lowest = num
+            elif num <= second_lowest:
+                second_lowest = num
             else:
-                # m1和m2代表当前已经递增的两个出现过的数字
-                # 同时m1 < m2
-                # 则如果出现了另外一个既大于m1又大于m2的数字
+                # lowest和second_lowest代表当前已经递增的两个出现过的数字
+                # 同时lowest < second_lowest
+                # 则如果出现了另外一个既大于lowest又大于second_lowest的数字
                 # 说明就找到了一个递增的三元组
                 return True
         
@@ -11202,13 +11346,10 @@ class Solution:
 
 #### 428. Serialize and Deserialize N-ary Tree
 ```
-"""
-# Definition for a Node.
 class Node(object):
     def __init__(self, val, children):
         self.val = val
         self.children = children
-"""
 from collections import deque
 
 class Codec:
@@ -11316,7 +11457,7 @@ class Solution(object):
         return head
 ```
 
-#### 432. All O`one Data Structure, Hard, Facebook, Linkedin
+#### 432. All O`one Data Structure
 ```
 from collections import defaultdict
 
@@ -14133,6 +14274,45 @@ class Solution:
         return node
 ```
 
+#### 655. Print Binary Tree
+```
+# Definition for a binary tree node.
+# class TreeNode(object):
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution(object):
+    def printTree(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[List[str]]
+        """
+        # 典型分治法思维
+        h = self._get_height(root)
+        w = 2 ** h - 1
+        res = [[''] * w for _ in range(h)]
+        self._dfs(root, res, curr_h=0, height=h, start=0, end=w - 1)
+        return res
+    
+    def _dfs(self, root, res, curr_h, height, start, end):
+        if not root or curr_h == height:
+            return
+        
+        res[curr_h][(start + end) // 2] = str(root.val)
+        self._dfs(root.left, res, curr_h + 1, height, start, (start + end) // 2)
+        self._dfs(root.right, res, curr_h + 1, height, (start + end) // 2 + 1, end)
+    
+    def _get_height(self, root):
+        if not root:
+            return 0
+        return 1 + max(
+            self._get_height(root.left), 
+            self._get_height(root.right),
+        )
+```
+
 #### 658. Find K Closest Elements
 ```
 class Solution:
@@ -15313,6 +15493,62 @@ class Solution:
 #         return res
 ```
 
+#### 715. Range Module
+```
+from bisect import bisect
+from bisect import bisect_left
+
+class RangeModule:
+
+    def __init__(self):
+        self.X = [0, 10 ** 9]
+        self.track = [False] * 2
+    
+    def _index(self, x):
+        i = bisect_left(self.X, x)
+        if x != self.X[i]:
+            self.X.insert(i, x)
+            self.track.insert(i, self.track[i - 1])
+        return i
+        
+    def addRange(self, left, right, track=True):
+        """
+        :type left: int
+        :type right: int
+        :rtype: void
+        """
+        i = self._index(left)
+        j = self._index(right)
+        # 相当于合并了X里面的元素
+        self.X[i:j] = [left]
+        self.track[i:j] = [track]
+        
+    def queryRange(self, left, right):
+        """
+        :type left: int
+        :type right: int
+        :rtype: bool
+        """
+        i = bisect(self.X, left) - 1
+        j = bisect_left(self.X, right)
+        return all(self.track[i:j])
+
+    def removeRange(self, left, right):
+        """
+        :type left: int
+        :type right: int
+        :rtype: void
+        """
+        self.addRange(left, right, False)
+
+
+# Your RangeModule object will be instantiated and called as such:
+# obj = RangeModule()
+# obj.addRange(left,right)
+# param_2 = obj.queryRange(left,right)
+# obj.removeRange(left,right)
+```
+
 #### 716. Max Stack
 ```
 class MaxStack:
@@ -15374,8 +15610,6 @@ class MaxStack:
             self.push(temp.pop())
         
         return curr
-        
-
 
 # Your MaxStack object will be instantiated and called as such:
 # obj = MaxStack()
@@ -16027,6 +16261,24 @@ class Solution:
             self._dfs(node.right, graph, node)
 ```
 
+#### 744. Find Smallest Letter Greater Than Target
+```
+class Solution:
+    def nextGreatestLetter(self, letters: 'List[str]', target: 'str') -> 'str':
+        start, end = 0, len(letters) - 1
+        while start + 1 < end:
+            mid = start + (end - start) // 2
+            if letters[mid] <= target:
+                start = mid + 1
+            else:
+                end = mid
+        if letters[start] > target:
+            return letters[start]
+        if letters[end] > target:
+            return letters[end]
+        return letters[0]
+```
+
 #### 745. Prefix and Suffix Search
 ```
 class WordFilter:
@@ -16066,6 +16318,7 @@ class WordFilter:
 class Solution:
     def countCornerRectangles(self, grid: 'List[List[int]]') -> 'int':
         m, n = len(grid), len(grid[0])
+        # 核心思路用两根线扫描
         res = 0
         for i in range(m):
             for j in range(i + 1, m):
@@ -16873,6 +17126,28 @@ class Solution:
                     res += 1
         
         return res
+```
+
+#### 796. Rotate String
+```
+class Solution:
+    def rotateString(self, A, B):
+        """
+        :type A: str
+        :type B: str
+        :rtype: bool
+        """
+        if not A:
+            return not B
+        
+        if len(A) != len(B):
+            return False
+        
+        for i in range(len(A)):
+            if A[i:] + A[:i] == B:
+                return True
+        
+        return False
 ```
 
 #### 799. Champagne Tower
