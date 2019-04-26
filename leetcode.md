@@ -1,5 +1,3 @@
-## Leetcode
-
 #### 1. Two Sum
 ```
 class Solution:
@@ -142,7 +140,7 @@ class Solution:
 
         for i in range(n):
             for j in range(i):
-                if s[i] == s[j] and (i - j < 2 or dp[j + 1][i - 1]):
+                if s[i] == s[j] and (i - j <= 2 or dp[j + 1][i - 1]):
                     dp[j][i] = True
                     if max_len < i - j + 1:
                         max_len = i - j + 1
@@ -485,6 +483,34 @@ class Solution:
                 else:
                     left += 1
             
+        return res
+```
+
+#### 16. 3Sum Closest
+```
+class Solution:
+    def threeSumClosest(self, nums: List[int], target: int) -> int:
+        if not nums or len(nums) < 3:
+            return 2 ** 31 - 1
+        
+        n = len(nums)
+        res = sum(nums[:3])
+        diff = abs(res - target)
+        nums.sort()
+        
+        for i in range(n - 2):
+            left, right = i + 1, n - 1
+            while left < right:
+                total = nums[i] + nums[left] + nums[right]
+                new_diff = abs(total - target)
+                if new_diff < diff:
+                    diff = new_diff
+                    res = total
+                if total < target:
+                    left += 1
+                else:
+                    right -= 1
+        
         return res
 ```
 
@@ -1297,6 +1323,8 @@ class Solution:
         :rtype: List[List[int]]
         """
         # 这道题是求所有和为target的集合
+        # 答案中不能有重复
+        # 其中condidates中的数字可以无限用
         ret = []
         if not candidates:
             return ret
@@ -1316,9 +1344,9 @@ class Solution:
             # 而且因为candidates是排过序的
             # 所以后面的也不用看了，直接break掉
             if candidates[i] > target:
-                break
+                return
             # 这道题要求不能有重复的解，即使[2, 2]和[2, 2]是同一个解
-            if i != 0 and candidates[i] == candidates[i - 1]:
+            if i != start and candidates[i] == candidates[start]:
                 continue
             current.append(candidates[i])
             # 之所以用i，而不是i + 1是因为可以重复使用
@@ -5336,7 +5364,7 @@ class Solution:
         return res
 ```
 
-### 167. Two Sum II - Input array is sorted
+#### 167. Two Sum II - Input array is sorted
 ```
 class Solution:
     def twoSum(self, numbers, target):
@@ -6047,7 +6075,8 @@ class WordDictionary:
 
     def search(self, word):
         """
-        Returns if the word is in the data structure. A word could contain the dot character '.' to represent any one letter.
+        Returns if the word is in the data structure. 
+        A word could contain the dot character '.' to represent any one letter.
         :type word: str
         :rtype: bool
         """
@@ -6637,6 +6666,51 @@ class Solution:
         return res
 ```
 
+#### 229. Majority Element II
+```
+class Solution:
+    def majorityElement(self, nums: List[int]) -> List[int]:
+        # 结果最多只有两个满足条件
+        # Moore Voting
+        # 要求O(1)space
+        # 思路就是先找出两个众数
+        # 再验证这两个众数确实是满足条件
+        m = n = None
+        cm = cn = 0
+        for num in nums:
+            if num == m:
+                cm += 1
+            elif num == n:
+                cn += 1
+            elif cm == 0:
+                m = num
+                cm = 1
+            elif cn == 0:
+                n = num
+                cn = 1
+            else:
+                # 众数总是会出现的次数比其他的数字多
+                # 如果没有下面两行
+                # 会导致m和n被第一次确定后就永远不变了
+                # 而很可能真正的m和n是在后面出现的
+                cm -= 1
+                cn -= 1
+        
+        cm = cn = 0
+        for num in nums:
+            if num == m:
+                cm += 1
+            elif num == n:
+                cn += 1
+        
+        res = []
+        if cm > len(nums) / 3:
+            res.append(m)
+        if cn > len(nums) / 3:
+            res.append(n)
+        return res
+```
+
 #### 230. Kth Smallest Element in a BST
 ```
 # Definition for a binary tree node.
@@ -6666,6 +6740,45 @@ class Solution:
         if not node:
             return 0
         return 1 + self._count(node.left) + self._count(node.right)
+```
+
+#### 232. Implement Queue using Stacks
+```
+class MyQueue:
+
+    def __init__(self):
+        # 放元素永远往new里放
+        # pop或者peek队列时先将new中所有的东西dump到old中（如果old为空的话）
+        # 然后再去old里pop队头或者peek队头
+        self._old = []
+        self._new = []
+
+    def push(self, x: int) -> None:
+        self._new.append(x)
+
+    def pop(self) -> int:
+        self._shift_stack()
+        return self._old.pop()
+
+    def peek(self) -> int:
+        self._shift_stack()
+        return self._old[-1]
+
+    def empty(self) -> bool:
+        return len(self._old) == 0 and len(self._new) == 0
+    
+    def _shift_stack(self):
+        if len(self._old) > 0:
+            return
+        while self._new:
+            self._old.append(self._new.pop())
+
+# Your MyQueue object will be instantiated and called as such:
+# obj = MyQueue()
+# obj.push(x)
+# param_2 = obj.pop()
+# param_3 = obj.peek()
+# param_4 = obj.empty()
 ```
 
 #### 234. Palindrome Linked List
@@ -7153,43 +7266,37 @@ class Solution:
 
 #### 251. Flatten 2D Vector
 ```
-class Vector2D(object):
+class Vector2D:
 
-    def __init__(self, vec2d):
-        """
-        Initialize your data structure here.
-        :type vec2d: List[List[int]]
-        """
-        self._data = [i[:] for i in vec2d]
-        self._row = 0
-        self._col = 0
-        self._max_row = len(vec2d)
+    def __init__(self, v):
+        # 注意follow-up是要求实现remove最后一个元素的操作
+        # 最后一个元素是指本该在next中返回的元素
+        self._v = v
+        self._row = self._col = 0
 
     def next(self):
-        """
-        :rtype: int
-        """
-        res = self._data[self._row][self._col]
-        self._col += 1
-        return res
+        while self.hasNext():
+            res = self._v[self._row][self._col]
+            self._col += 1
+            if self._col == len(self._v[self._row]):
+                self._row += 1
+                self._col = 0
+            return res
 
     def hasNext(self):
-        """
-        :rtype: bool
-        """
         # 陷阱：注意下面不能用if
         # 因为有test case是例如[[1], [], [3]]的情况
         # 在这种情况下需要跳过中间的空list
-        while self._row < self._max_row and \
-            self._col == len(self._data[self._row]):
-            self._col = 0
+        while self._row < len(self._v) and len(self._v[self._row]) == 0:
             self._row += 1
-        return self._row < self._max_row
-        
+            self._col = 0
+        return self._row < len(self._v)
+
 
 # Your Vector2D object will be instantiated and called as such:
-# i, v = Vector2D(vec2d), []
-# while i.hasNext(): v.append(i.next())
+# obj = Vector2D(v)
+# param_1 = obj.next()
+# param_2 = obj.hasNext()
 ```
 
 #### 252. Meeting Rooms
@@ -7291,6 +7398,46 @@ class Solution:
                 curr.append(i)
                 self._dfs(n // i, i, curr, res)
                 curr.pop()
+```
+
+#### 255. Verify Preorder Sequence in Binary Search Tree
+```
+class Solution:
+    def verifyPreorder(self, preorder: List[int]) -> bool:
+        # 维护一个单调递减栈
+        stack = []
+        curr_low = -2 ** 31
+        for num in preorder:
+            if num < curr_low:
+                return False
+            # 说明当前num是一个右子树的节点
+            while stack and num > stack[-1]:
+                curr_low = stack.pop()
+            stack.append(num)
+        return True
+
+# 下面的分治也是对的 但是在大数据集上TLE
+class Solution:
+    def verifyPreorder(self, preorder: List[int]) -> bool:
+        return self._dfs(preorder, 0, len(preorder) - 1, -2 ** 31, 2 ** 31 - 1)
+    
+    def _dfs(self, preorder, start, end, lower, upper):
+        if start > end:
+            return True
+        
+        val = preorder[start]
+        if val <= lower or val >= upper:
+            return False
+
+        # 寻找分界点
+        i = start + 1
+        while i <= end:
+            if preorder[i] >= val:
+                break
+            i += 1
+        
+        return self._dfs(preorder, start + 1, i - 1, lower, val) \
+            and self._dfs(preorder, i, end, val, upper)
 ```
 
 #### 256. Paint House
@@ -7513,6 +7660,40 @@ class Solution:
             else:
                 hash_set.add(ch)
         return len(hash_set) <= 1
+```
+
+#### 267. Palindrome Permutation II
+```
+from collections import defaultdict
+
+class Solution:
+    def generatePalindromes(self, s: str) -> List[str]:
+        mapping = defaultdict(int)
+        for ch in s:
+            mapping[ch] += 1
+        
+        temp = ''
+        mid = ''
+        for ch, count in mapping.items():
+            if count % 2 == 1:
+                mid += ch
+            if len(mid) > 1:
+                return []
+            temp += ch * (count // 2)
+        
+        res = set()
+        self._dfs(t=temp, curr='', mid=mid, res=res)
+        return list(res)
+    
+    def _dfs(self, t, curr, mid, res):
+        if not t:
+            res.add(curr + mid + curr[::-1])
+            return
+        
+        for i in range(len(t)):
+            if i > 0 and t[i] == t[0]:
+                continue
+            self._dfs(t[:i] + t[i + 1:], curr + t[i], mid, res)
 ```
 
 #### 269. Alien Dictionary
@@ -7810,6 +7991,36 @@ class Solution:
         if isBadVersion(start):
             return start
         return end
+```
+
+#### 279. Perfect Squares
+```
+# Python3 Leetcode 大数据TLE，但是解法是对的，LintCode通过
+class Solution:
+    def numSquares(self, n: int) -> int:
+        # 四平方和定理：任意一个正整数均可表示为小于等于4个整数的平方和
+        # 首先我们将数字化简一下
+        # 由于一个数如果含有因子4，那么我们可以把4都去掉，并不影响结果
+        # 比如2和8,3和12等等，返回的结果都相同
+        # 再一个是如果一个数除以8余7的话，那么肯定是由4个完全平方数组成(不会证明..)
+        # 所以改用DP
+        # dp[i]就表示i的完美平方数是多少
+        dp = [2 ** 31 - 1] * (n + 1)
+        i = 1
+        # 初始化
+        while i * i <= n:
+            # 此时数字i ** 2自己就是完美平方数
+            dp[i * i] = 1
+            i += 1
+        
+        for i in range(1, n + 1):
+            # 当成背包问题来解
+            j = 1
+            while j * j <= i:
+                dp[i] = min(dp[i], dp[i - j * j] + 1)
+                j += 1
+        
+        return dp[-1]
 ```
 
 #### 280. Wiggle Sort
@@ -8124,6 +8335,46 @@ class ValidWordAbbr:
 # Your ValidWordAbbr object will be instantiated and called as such:
 # obj = ValidWordAbbr(dictionary)
 # param_1 = obj.isUnique(word)
+```
+
+#### 289. Game of Life
+```
+class Solution:
+    def gameOfLife(self, board: List[List[int]]) -> None:
+        """
+        Do not return anything, modify board in-place instead.
+        """
+        if not board or not board[0]:
+            return
+        
+        m, n = len(board), len(board[0])
+        dir_x = [-1, -1, -1, 0, 1, 1, 1, 0]
+        dir_y = [-1, 0, 1, 1, 1, 0, -1, -1];
+        
+        # 思路：有限状态机
+        # 状态0：死细胞转为死细胞
+        # 状态1：活细胞转为活细胞
+        # 状态2：活细胞转为死细胞
+        # 状态3：死细胞转为活细胞
+        # 所以1和2都是活细胞(只不过一个要死了一个要继续活了)
+        # 而0和3都是死细胞(一个要活了一个继续死了)
+        for i in range(m):
+            for j in range(n):
+                count = 0
+                for di, dj in zip(dir_x, dir_y):
+                    newi = i + di
+                    newj = j + dj
+                    if 0 <= newi < m and 0 <= newj < n and (board[newi][newj] == 1 or board[newi][newj] == 2):
+                        count += 1
+                if board[i][j] != 0 and (count < 2 or count > 3):
+                    board[i][j] = 2
+                elif board[i][j] == 0 and count == 3:
+                    board[i][j] = 3
+        
+        # 最后再通过模2就能把0~3的状态最后固定了
+        for i in range(m):
+            for j in range(n):
+                board[i][j] %= 2
 ```
 
 #### 291. Word Pattern II
@@ -9591,6 +9842,18 @@ class NestedIterator(object):
         return False
 ```
 
+#### 342. Power of Four
+```
+class Solution:
+    def isPowerOfFour(self, num: int) -> bool:
+        while num and num % 4 == 0:
+            num //= 4
+        return num == 1
+    
+        # 小技巧：如果一个数num是2的幂
+        # 则 num & (num - 1) == 0
+```
+
 #### 344. Reverse String
 ```
 class Solution:
@@ -9763,6 +10026,49 @@ class Solution:
                 j += 1
         
         return res
+```
+
+#### 352. Data Stream as Disjoint Intervals
+```
+# Definition for an interval.
+# class Interval:
+#     def __init__(self, s=0, e=0):
+#         self.start = s
+#         self.end = e
+
+class SummaryRanges:
+
+    def __init__(self):
+        """
+        Initialize your data structure here.
+        """
+        self._data = []
+
+    def addNum(self, val: int) -> None:
+        interval = Interval(val, val)
+        insert_pos = 0
+        res = []
+        for each in self._data:
+            if interval.start > each.end + 1:
+                insert_pos += 1
+                res.append(each)
+                continue
+            if interval.end + 1 < each.start:
+                res.append(each)
+                continue
+            interval.start = min(interval.start, each.start)
+            interval.end = max(interval.end, each.end)
+        res.insert(insert_pos, interval)
+        self._data = res
+            
+    def getIntervals(self) -> List[Interval]:
+        return self._data
+
+
+# Your SummaryRanges object will be instantiated and called as such:
+# obj = SummaryRanges()
+# obj.addNum(val)
+# param_2 = obj.getIntervals()
 ```
 
 #### 353. Design Snake Game
@@ -10042,6 +10348,47 @@ class Solution:
                     res = max(res, h1[i][j] + h2[i][j] + v1[i][j] + v2[i][j])
         
         return res
+```
+
+#### 362. Design Hit Counter
+```
+class HitCounter:
+
+    def __init__(self):
+        """
+        Initialize your data structure here.
+        """
+        self._duration = 300
+        self._times = [0] * self._duration
+        self._hits = [0] * self._duration
+
+    def hit(self, timestamp: int) -> None:
+        """
+        Record a hit.
+        @param timestamp - The current timestamp (in seconds granularity).
+        """
+        inx = timestamp % self._duration
+        if self._times[inx] != timestamp:
+            self._times[inx] = timestamp
+            self._hits[inx] = 1
+        else:
+            self._hits[inx] += 1
+
+    def getHits(self, timestamp: int) -> int:
+        """
+        Return the number of hits in the past 5 minutes.
+        @param timestamp - The current timestamp (in seconds granularity).
+        """
+        res = 0
+        for i in range(self._duration):
+            if timestamp - self._times[i] < self._duration:
+                res += self._hits[i]
+        return res
+
+# Your HitCounter object will be instantiated and called as such:
+# obj = HitCounter()
+# obj.hit(timestamp)
+# param_2 = obj.getHits(timestamp)
 ```
 
 #### 364. Nested List Weight Sum II
@@ -10475,65 +10822,37 @@ class RandomizedSet(object):
 
 #### 381. Insert Delete GetRandom O(1) - Duplicates allowed
 ```
-# 感觉是对的
-# lintcode能通过
-# leetcode通不过？
 from random import choice
+from collections import defaultdict
 
 class RandomizedCollection:
-
+    
     def __init__(self):
-        """
-        Initialize your data structure here.
-        """
-        self._map = dict()
+        self._maps = defaultdict(set)
         self._nums = list()
 
-    def insert(self, val):
-        """
-        Inserts a value to the collection. Returns true if the collection did not already contain the specified element.
-        :type val: int
-        :rtype: bool
-        """
+    def insert(self, val: int) -> bool:
         self._nums.append(val)
-        if val in self._map:
-            self._map[val].append(len(self._nums) - 1)
-            return False
-        else:
-            self._map[val] = [len(self._nums) - 1]
-            return True
+        self._maps[val].add(len(self._nums) - 1)
+        return len(self._maps[val]) == 1
 
-    def remove(self, val):
-        """
-        Removes a value from the collection. Returns true if the collection contained the specified element.
-        :type val: int
-        :rtype: bool
-        """
-        if val in self._map:
-            pos = self._map[val].pop()
-            if not self._map[val]:
-                del self._map[val]
-            if pos != len(self._nums) - 1:
-                self._map[self._nums[-1]][-1] = pos
-                self._nums[pos], self._nums[-1] = self._nums[-1], self._nums[pos]
+    def remove(self, val: int) -> bool:
+        if self._maps[val]:
+            out_inx = self._maps[val].pop()
+            last_val = self._nums[-1]
+            self._nums[out_inx] = last_val
+            if self._maps[last_val]:
+                self._maps[last_val].add(out_inx)
+                self._maps[last_val].remove(len(self._nums) - 1)
             self._nums.pop()
             return True
-        else:
-            return False
+        return False
 
-    def getRandom(self):
+    def getRandom(self) -> int:
         """
         Get a random element from the collection.
-        :rtype: int
         """
         return choice(self._nums)
-
-
-# Your RandomizedCollection object will be instantiated and called as such:
-# obj = RandomizedCollection()
-# param_1 = obj.insert(val)
-# param_2 = obj.remove(val)
-# param_3 = obj.getRandom()
 ```
 
 #### 382. Linked List Random Node
@@ -11399,6 +11718,42 @@ class Solution:
         return first
 ```
 
+#### 427. Construct Quad Tree
+```
+"""
+# Definition for a QuadTree node.
+class Node(object):
+    def __init__(self, val, isLeaf, topLeft, topRight, bottomLeft, bottomRight):
+        self.val = val
+        self.isLeaf = isLeaf
+        self.topLeft = topLeft
+        self.topRight = topRight
+        self.bottomLeft = bottomLeft
+        self.bottomRight = bottomRight
+"""
+class Solution(object):
+    def construct(self, grid):
+        """
+        :type grid: List[List[int]]
+        :rtype: Node
+        """
+        return self._build(grid, 0, 0, len(grid))
+    
+    def _build(self, grid, x, y, length):
+        if length == 0:
+            return None
+        for i in range(x, x + length):
+            for j in range(y, y + length):
+                if grid[i][j] != grid[x][y]:
+                    top_left = self._build(grid, x, y, length // 2)
+                    top_right = self._build(grid, x, y + length // 2, length // 2)
+                    bottom_left = self._build(grid, x + length // 2, y, length // 2)
+                    bottom_right = self._build(grid, x + length // 2, y + length // 2, length // 2)
+                    # 对于非叶子节点，其val(第一个参数)是True或者False都没关系
+                    return Node(True, False, top_left, top_right, bottom_left, bottom_right)
+        return Node(bool(grid[x][y]), True, None, None, None, None)
+```
+
 #### 428. Serialize and Deserialize N-ary Tree
 ```
 class Node(object):
@@ -12139,6 +12494,34 @@ class Solution:
                 next_inx_mapping[curr] = next_inx
                 curr = next_inx
         
+        return False
+```
+
+#### 464. Can I Win
+```
+class Solution:
+    def canIWin(self, limit: int, total: int) -> bool:
+        if limit >= total:
+            return True
+        if (limit + 1) * limit // 2 < total:
+            return False
+        cache = dict()
+        return self._dfs(limit, total, used=0, cache=cache)
+    
+    # dfs定义：
+    # 下一个人在当前状态下（used表示已经选过的数字，cache里存着对应used状态下的输赢情况）
+    # 能否赢
+    def _dfs(self, limit, total, used, cache):
+        if used in cache:
+            return cache[used]
+        for i in range(limit):
+            key = 1 << i
+            if key & used == 0:
+                if i + 1 >= total or \
+                    not self._dfs(limit, total - (i + 1), key | used, cache):
+                    cache[used] = True
+                    return True
+        cache[used] = False
         return False
 ```
 
@@ -13240,6 +13623,68 @@ class Solution:
         return board
 ```
 
+#### 535. Encode and Decode TinyURL
+```
+class Codec:
+
+    def __init__(self):
+        self._urls = []
+    
+    def encode(self, longUrl):
+        """Encodes a URL to a shortened URL.
+        :type longUrl: str
+        :rtype: str
+        """
+        self._urls.append(longUrl)
+        return 'http://tinyurl.com/' + str(len(self._urls) - 1)
+
+    def decode(self, shortUrl):
+        """Decodes a shortened URL to its original URL.
+        :type shortUrl: str
+        :rtype: str
+        """
+        pos = int(shortUrl[shortUrl.rfind('/') + 1:])
+        return self._urls[pos]
+
+# Your Codec object will be instantiated and called as such:
+# codec = Codec()
+# codec.decode(codec.encode(url))
+```
+
+#### 542. 01 Matrix
+```
+from collections import deque
+
+class Solution:
+    def updateMatrix(self, matrix: List[List[int]]) -> List[List[int]]:
+        if not matrix or not matrix[0]:
+            return matrix
+        
+        m, n = len(matrix), len(matrix[0])
+        dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        queue = deque()
+        
+        for i in range(m):
+            for j in range(n):
+                if matrix[i][j] == 0:
+                    queue.append((i, j))
+                else:
+                    matrix[i][j] = 2 ** 31 - 1
+        
+        while queue:
+            ci, cj = queue.popleft()
+            for di, dj in dirs:
+                newi, newj = ci + di, cj + dj
+                # 实际上matrix[newi][newj] > matrix[ci][cj]就隐含着
+                # 原本的matrix[newi][newj] == 1
+                # 所以newi newj这个位置是需要更新与最近的0的位置的
+                if 0 <= newi < m and 0 <= newj < n and matrix[newi][newj] > matrix[ci][cj]:
+                    matrix[newi][newj] = matrix[ci][cj] + 1
+                    queue.append((newi, newj))
+        
+        return matrix
+```
+
 #### 543. Diameter of Binary Tree
 ```
 # Definition for a binary tree node.
@@ -13845,6 +14290,27 @@ class Solution:
         return res >= n
 ```
 
+#### 606. Construct String from Binary Tree
+```
+class Solution:
+    def tree2str(self, t):
+        # 输入是一个节点
+        # 要求返回形如"1(2(4))(3)"的字符串
+        # 如果没有左孩子，应该保留括号
+        if not t:
+            return ''
+        if not t.left and not t.right:
+            return str(t.val)
+        
+        res = str(t.val)
+        if not t.right:
+            res += '({})'.format(self.tree2str(t.left))
+        else:
+            res += '({})({})'.format(self.tree2str(t.left), self.tree2str(t.right))
+        
+        return res
+```
+
 #### 611. Valid Triangle Number
 ```
 class Solution:
@@ -14315,6 +14781,31 @@ class Solution:
                     res += 1
         
         return res
+```
+
+#### 652. Find Duplicate Subtrees
+```
+from collections import defaultdict
+
+class Solution:
+    def findDuplicateSubtrees(self, root: TreeNode) -> List[TreeNode]:
+        res = []
+        mapping = defaultdict(int)
+        self._dfs(root, mapping,res)
+        return res
+    
+    def _dfs(self, node, mapping, res):
+        if not node:
+            return '#'
+        string = str(node.val) + ',' + self._dfs(node.left, mapping, res) + self._dfs(node.right, mapping, res)
+
+        # 必须先判断mapping[string] == 1
+        # 因为只有这种情况会只出现一次
+        if mapping[string] == 1:
+            res.append(node)
+        mapping[string] += 1
+        
+        return string
 ```
 
 #### 654. Maximum Binary Tree
@@ -15369,6 +15860,29 @@ class Solution:
         return False
 ```
 
+#### 701. Insert into a Binary Search Tree
+```
+class Solution:
+    def insertIntoBST(self, root: TreeNode, val: int) -> TreeNode:
+        if not root:
+            return TreeNode(val)
+        curr = root
+        while True:
+            if curr.val <= val:
+                if not curr.right:
+                    curr.right = TreeNode(val)
+                    break
+                else:
+                    curr = curr.right
+            else:
+                if not curr.left:
+                    curr.left = TreeNode(val)
+                    break
+                else:
+                    curr = curr.left
+        return root
+```
+
 #### 703. Kth Largest Element in a Stream
 ```
 from heapq import heappush
@@ -16280,6 +16794,39 @@ class Solution:
         return res
 ```
 
+#### 741. Cherry Pickup
+```
+class Solution:
+    def cherryPickup(self, grid: List[List[int]]) -> int:
+        if not grid or not grid[0]:
+            return 0
+        
+        n = len(grid)
+        mx = 2 * n - 1
+        dp = [[-1] * n for _ in range(n)]
+        dp[0][0] = grid[0][0]
+
+        for k in range(1, mx):
+            for i in range(n - 1, -1, -1):
+                for p in range(n - 1, -1, -1):
+                    j = k - i
+                    q = k - p
+                    if j < 0 or j >= n or q < 0 or q >= n or grid[i][j] == -1 or grid[p][q] == -1:
+                        dp[i][p] = -1
+                        continue
+                    if i > 0:
+                        dp[i][p] = max(dp[i][p], dp[i - 1][p])
+                    if p > 0:
+                        dp[i][p] = max(dp[i][p], dp[i][p - 1])
+                    if i > 0 and p > 0:
+                        dp[i][p] = max(dp[i][p], dp[i - 1][p - 1])
+                    if dp[i][p] != -1:
+                        # 坑：下式的括号不能省略！！！
+                        dp[i][p] += grid[i][j] + (grid[p][q] if i != p else 0)
+        
+        return max(dp[-1][-1], 0)
+```
+
 #### 742. Closest Leaf in a Binary Tree
 ```
 # Definition for a binary tree node.
@@ -16508,6 +17055,57 @@ class Solution:
                     break
 
         return res
+```
+
+#### 755. Pour Water
+```
+class Solution:
+    def pourWater(self, heights: List[int], V: int, K: int) -> List[int]:
+        while V > 0:
+            l = r = K
+            while l > 0 and heights[l] >= heights[l - 1]:
+                l -= 1
+            while l < K and heights[l] == heights[l + 1]:
+                l += 1
+            while r < len(heights) - 1 and heights[r] >= heights[r + 1]:
+                r += 1
+            while r > K and heights[r] == heights[r - 1]:
+                r -= 1
+            if heights[l] < heights[K]:
+                heights[l] += 1
+            else:
+                heights[r] += 1
+            V -= 1
+        return heights
+```
+
+#### 756. Pyramid Transition Matrix
+```
+from collections import defaultdict
+
+class Solution:
+    def pyramidTransition(self, bottom: str, allowed: List[str]) -> bool:
+        mapping = defaultdict(set)
+        for string in allowed:
+            mapping[string[:-1]].add(string[-1])
+        return self._dfs(curr=bottom, above='', mapping=mapping)
+    
+    def _dfs(self, curr, above, mapping):
+        if len(curr) == 2 and len(above) == 1:
+            return True
+        
+        if len(above) == len(curr) - 1:
+            return self._dfs(curr=above, above='', mapping=mapping)
+
+        # 根据above字符的长度，确定当前在下一层（curr）的位置
+        pos = len(above)
+        base = curr[pos:pos + 2]
+        if base in mapping:
+            for ch in mapping[base]:
+                if self._dfs(curr=curr, above=above + ch, mapping=mapping):
+                    return True
+        
+        return False
 ```
 
 #### 759. Employee Free Time
@@ -17614,6 +18212,26 @@ class Solution:
         return res
 ```
 
+#### 829. Consecutive Numbers Sum
+```
+class Solution:
+    def consecutiveNumbersSum(self, N):
+        """
+        :type N: int
+        :rtype: int
+        """
+        res = 0
+        m = 1
+        while True:
+            mx = N - m * (m - 1) // 2
+            if mx <= 0:
+                break
+            if mx % m == 0:
+                res += 1
+            m += 1
+        return res
+```
+
 #### 833. Find And Replace in String
 ```
 class Solution:
@@ -18335,6 +18953,55 @@ class Solution:
         return True
 ```
 
+#### 895. Maximum Frequency Stack
+```
+from collections import defaultdict
+
+class FreqStack:
+
+    def __init__(self):
+        # 实现一个频率栈
+        # push方法将一个值放入栈中
+        # pop方法将出现最多的值去掉
+        self.key_to_freq = defaultdict(int)
+        self.freq_to_keys = defaultdict(list)
+        self.max_freq = 0
+
+    # 核心：不停的在map里记录下看起来对于的freq
+    # 这样保证每一个freq(只要0 < freq <= max_freq)里对应的list都不会为空
+    def push(self, key):
+        self.key_to_freq[key] += 1
+        curr_freq = self.key_to_freq[key]
+        if curr_freq > self.max_freq:
+            # 这里就能保证在push方法中更新过的max_freq肯定能在self.freq_to_keys
+            # 中找到一个key
+            self.max_freq = curr_freq
+        # 比如连续push进去3个5
+        # 则此时freq_to_keys就是：
+        # {
+        #     1: [5],
+        #     2: [5],
+        #     3: [5],
+        # } # max_freq = 3
+        # 再push进去一个9，则
+        # {
+        #     1: [5, 9],
+        #     2: [5],
+        #     3: [5],
+        # } max_freq仍然等于3
+        self.freq_to_keys[curr_freq].append(key)
+
+    def pop(self):
+        res = self.freq_to_keys[self.max_freq].pop()
+        self.key_to_freq[res] -= 1
+        if len(self.freq_to_keys[self.max_freq]) == 0:
+            # 由于max_freq是按1累加的
+            # 所以就保证了每一个max_freq都会有对应的list存在
+            # 因此下次访问pop方法去除max_freq里的一个ele时候能保证list肯定非空
+            self.max_freq -= 1
+        return res
+```
+
 #### 896. Monotonic Array
 ```
 class Solution:
@@ -18800,6 +19467,28 @@ class Solution:
         return _path_to_str(A, graph, path)
 ```
 
+#### 946. Validate Stack Sequences
+```
+class Solution(object):
+    def validateStackSequences(self, pushed, popped):
+        if len(pushed) != len(popped):
+            return False
+        
+        if len(pushed) == 0:
+            return True
+        
+        stack = []
+        # i表示第i次的pop操作
+        i = 0
+        for each in pushed:
+            stack.append(each)
+            while stack and stack[-1] == popped[i]:
+                i += 1
+                stack.pop()
+        
+        return len(stack) == 0
+```
+
 #### 947. Most Stones Removed with Same Row or Column
 ```
 class UnionFind:
@@ -18910,6 +19599,29 @@ class Solution:
         return True
 ```
 
+#### 958. Check Completeness of a Binary Tree
+```
+class Solution:
+    def isCompleteTree(self, root):
+        # 这道题是要检查root是不是一棵完全树
+        nodes = [(root, 1)]
+        i = 0
+        while i < len(nodes):
+            node, v = nodes[i]
+            i += 1
+            if node:
+                # 相当于记录下nodes这个数组最大能扩展到多少
+                # 如果某个left为空
+                # 就会跳过这个if，即不会往nodes数组中添加新node
+                # 则数组的理论长度（用2 * v或者2 * v + 1表示的）
+                # 就会和实际的nodes数组长度不符
+                # 因为左边用的是2 * v，而右边用的是2 * v + 1
+                # 左右的v是不相同的(右边永远会比左边大1)
+                nodes.append((node.left, 2 * v))
+                nodes.append((node.right, 2 * v + 1))
+        return nodes[-1][-1] == len(nodes)
+```
+
 #### 975. Odd Even Jump	
 ```
 class Solution:
@@ -18953,4 +19665,115 @@ class Solution:
             lower[i] = higher[next_lower[i]]
         
         return sum(higher)
+```
+
+#### 977. Squares of a Sorted Array
+```
+from bisect import bisect_left
+
+class Solution:
+    def sortedSquares(self, A):
+        # 输入：[-4,-1,0,3,10]
+        # 输出：[0,1,9,16,100]
+        if not A:
+            return A
+        
+        zero_inx = bisect_left(A, 0)
+        left, right = A[:zero_inx][::-1], A[zero_inx:]
+        i = j = 0
+
+        res = []
+        while i < len(left) and j < len(right):
+            if -left[i] < right[j]:
+                res.append(left[i] ** 2)
+                i += 1
+            else:
+                res.append(right[j] ** 2)
+                j += 1
+        
+        while i < len(left):
+            res.append(left[i] ** 2)
+            i += 1
+        
+        while j < len(right):
+            res.append(right[j] ** 2)
+            j += 1
+        
+        return res
+
+        n = len(A)
+        i, j = 0, n - 1
+        res = [None] * n
+        for p in range(n - 1, -1, -1):
+            if abs(A[i]) > abs(A[j]):
+                res[p] = A[i] ** 2
+                i += 1
+            else:
+                res[p] = A[j] ** 2
+                j -= 1
+        return res
+    
+        # 简洁做法
+        # if not A:
+        #     return A
+        # n = len(A)
+        # i, j = 0, n - 1
+        # res = [None] * n
+        # for p in range(n - 1, -1, -1):
+        #     if abs(A[i]) > abs(A[j]):
+        #         res[p] = A[i] ** 2
+        #         i += 1
+        #     else:
+        #         res[p] = A[j] ** 2
+        #         j -= 1
+        # return res
+```
+
+#### 986. Interval List Intersections
+```
+# Definition for an interval.
+# class Interval:
+#     def __init__(self, s=0, e=0):
+#         self.start = s
+#         self.end = e
+
+class Solution:
+    def intervalIntersection(self, A: List[Interval], B: List[Interval]) -> List[Interval]:
+        # 审题！！！这道题是找A和B的交集，千万别和merge interval弄混了
+        i = j = 0
+        res = []
+        while i < len(A) and j < len(B):
+            low = max(A[i].start, B[j].start)
+            high = min(A[i].end, B[j].end)
+            if low <= high:
+                res.append(Interval(low, high))
+            # 这里必须是end
+            if A[i].end < B[j].end:
+                i += 1
+            else:
+                j += 1
+        return res
+```
+
+#### 1014. Capacity To Ship Packages Within D Days
+```
+class Solution:
+    def shipWithinDays(self, weights: List[int], D: int) -> int:
+        # 将weights按顺序分成D份，最小化D份中的最大值
+        # 实际上是抄书问题，二分法
+        start, end = max(weights), sum(weights)
+        while start < end:
+            mid = start + (end - start) // 2
+            required_days = 1
+            curr_weight = 0
+            for w in weights:
+                if curr_weight + w > mid:
+                    required_days += 1
+                    curr_weight = 0
+                curr_weight += w
+            if required_days > D:
+                start = mid + 1
+            else:
+                end = mid
+        return start
 ```
